@@ -28,6 +28,9 @@ def argument_parse():
     parser.add_argument("-m","--mode",dest='mode',metavar='mode',type=str,
                         default='supd',
                         required=False,)
+    parser.add_argument("-i","--interp",dest='interp',metavar='interp',type=int,
+                        default=0,
+                        required=False,)
     args=parser.parse_args()
     return parser, args
 
@@ -128,6 +131,7 @@ def sub_atom(lst):
 Ha2ev = 27.21138602
 if sub:
     print("subtract by atom e. in eV")
+    print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
     x_sub = np.array(x)[:-2]
     e_dd_sub = sub_atom(e_dd)*Ha2ev
     e_pd_sub = sub_atom(e_pd)*Ha2ev
@@ -138,7 +142,7 @@ if sub:
         print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
               e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
 
-exit()
+#exit()
 from scipy.interpolate import make_interp_spline as spl
 from scipy.optimize import root
 def spline_findmin(x, y):
@@ -148,5 +152,7 @@ def spline_findmin(x, y):
     print('root:    %.6f' %res.x)
     print('y(root): %.6f' %f(res.x))
     return res.x
-for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdk_sub]:
-    spline_findmin(x_sub, y)
+
+if args.interp:
+    for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdh_sub, e_supdk_sub]:
+        spline_findmin(x_sub, y)
