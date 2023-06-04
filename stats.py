@@ -86,17 +86,18 @@ h, k = get_param(args.fun) #float(sys.argv[2])
 task = args.task
 rscale = args.rscale #float(sys.argv[4])
 sub = bool(args.sub) #bool(sys.argv[5])
-print("     SUDD    SUPD    SUHF   SUPDk")
 
 filelist = runcmd("ls %s" % task).strip().split('\n')
 print(filelist)
 
+print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
 #exit()
 
 x = []
 e_dd = []
 e_pd = []
 e_su = []
+e_supdh = []
 e_supdk = []
 for s in filelist:
     #r = s.replace(task, '').replace('.out', '')
@@ -108,14 +109,15 @@ for s in filelist:
     data = p.split('\n')
     #print(data)
     su = suData(data)
-    print('%s  %6.3f %6.3f %6.3f %6.3f'%(r, su.sudd(h), su.supd(h), su.suhf, su.supd_k(h,k)))
+    print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
     if r[0].isdigit():
         x.append(float(r)/rscale)
     else:
         x.append(-1)
-    e_dd.append(su.sudd(h))
-    e_pd.append(su.supd(h))
+    e_dd.append(su.sudd(0.0))
+    e_pd.append(su.supd(0.0))
     e_su.append(su.suhf)
+    e_supdh.append(su.supd(h))
     e_supdk.append(su.supd_k(h,k))
 
 #exit()
@@ -125,14 +127,16 @@ def sub_atom(lst):
 
 Ha2ev = 27.21138602
 if sub:
+    print("subtract by atom e. in eV")
     x_sub = np.array(x)[:-2]
     e_dd_sub = sub_atom(e_dd)*Ha2ev
     e_pd_sub = sub_atom(e_pd)*Ha2ev
     e_su_sub = sub_atom(e_su)*Ha2ev
+    e_supdh_sub = sub_atom(e_supdh)*Ha2ev
     e_supdk_sub = sub_atom(e_supdk)*Ha2ev
     for i in range(len(x_sub)):
-        print('%s  %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
-              e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdk_sub[i]))
+        print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
+              e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
 
 exit()
 from scipy.interpolate import make_interp_spline as spl
