@@ -1,10 +1,25 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
-import sys
+#import sys
 import numpy as np
 
-datafile = sys.argv[1]
+import argparse
+
+def argument_parse():
+    parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+                               description='')
+    parser.add_argument("-i","--input",dest='input',metavar='input',type=str,#default='dump',
+                        required=True, #choices=['dh','scf'],
+                        help='')
+    parser.add_argument("-x","--show",dest='show',metavar='show',type=int,default=0,
+                        required=False, #choices=['dh','scf'],
+                        help='')
+    args=parser.parse_args()
+    return parser, args
+
+parser, args = argument_parse()
+datafile = args.input
 f = open(datafile, 'r')
 
 x = []
@@ -34,4 +49,6 @@ plt.plot(x, y[:,1])
 plt.plot(x, y[:,2])
 plt.plot(x, y[:,3])
 plt.plot(x, y[:,4])
+if args.show:
+    plt.show()
 plt.savefig(datafile+'.png')
