@@ -14,9 +14,9 @@ def argument_parse():
     parser.add_argument("-x","--show", action="store_true",
                         required=False, 
                         help='')
-    #parser.add_argument("-i","--interp", action="store_true",
-    #                    required=True, 
-    #                    help='')
+    parser.add_argument("-l","--loc", type=str, dest='loc', metavar='loc', default='lower right',
+                        required=False, 
+                        help='')
     args=parser.parse_args()
     return parser, args
 
@@ -58,7 +58,7 @@ def spline(x, y):
     return f, (res.x, f(res.x))
 
 def plot(x, y):
-    samp = np.linspace(x[0], x[-1], 50)
+    samp = np.linspace(x[0], x[-1], 100)
     func, point = spline(x, y)
     y_samp = func(samp)
     #print(samp)
@@ -66,13 +66,15 @@ def plot(x, y):
     plt.plot([point[0]], [point[1]], 'ro', markersize=3)
     return l
 
+plt.rc('font', size=12)
 plt_lines = []
 for i in range(1,5):
     l = plot(x, y[:,i])
     plt_lines.append(l)
 plt.xlabel('R / $\AA$')
 plt.ylabel('E / a.u.')
-plt.legend(handles = plt_lines, labels = ['SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)'])
+plt.ylim(None, 1.0)
+plt.legend(handles = plt_lines, labels = ['SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)'], loc=args.loc)
 if args.show:
     plt.show()
 plt.savefig(datafile+'.png')
