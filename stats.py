@@ -22,14 +22,12 @@ def argument_parse():
     parser.add_argument("-s","--rscale",dest='rscale',metavar='rscale',type=int,
                         default=100,
                         required=False,)
-    parser.add_argument("-S","--sub",dest='sub',metavar='sub',type=int,
-                        default=1,
+    parser.add_argument("-S","--sub", action='store_true',
                         required=False,)
     parser.add_argument("-m","--mode",dest='mode',metavar='mode',type=str,
                         default='supd',
                         required=False,)
-    parser.add_argument("-i","--interp",dest='interp',metavar='interp',type=int,
-                        default=0,
+    parser.add_argument("-i","--interp", action='store_true',
                         required=False,)
     args=parser.parse_args()
     return parser, args
@@ -104,7 +102,7 @@ e_supdh = []
 e_supdk = []
 for s in filelist:
     #r = s.replace(task, '').replace('.out', '')
-    r = s.split('_')[1].split('.')[0]
+    r = s.split('_')[-1].split('.')[0]
     #print(s, r)
     runcmd("cp %s tmp" % s)
     runcmd("sed -i 's/://' tmp")
