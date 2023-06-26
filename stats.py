@@ -29,6 +29,9 @@ def argument_parse():
                         required=False,)
     parser.add_argument("-i","--interp", action='store_true',
                         required=False,)
+    parser.add_argument("-r","--range",dest='range',metavar='range',type=str,
+                        default='-1000,1000',
+                        required=False,)
     args=parser.parse_args()
     return parser, args
 
@@ -91,6 +94,11 @@ sub = bool(args.sub) #bool(sys.argv[5])
 filelist = runcmd("ls %s" % task).strip().split('\n')
 print(filelist)
 
+lim = [0,0]
+r_range = args.range.split(',')
+lim[0] = float(r_range[0])
+lim[1] = float(r_range[1])
+
 print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
 #exit()
 
@@ -103,6 +111,9 @@ e_supdk = []
 for s in filelist:
     #r = s.replace(task, '').replace('.out', '')
     r = s.split('_')[-1].split('.')[0]
+    if r[0].isdigit():
+        if float(r)/rscale < lim[0] or float(r)/rscale > lim[1]:
+            continue
     #print(s, r)
     runcmd("cp %s tmp" % s)
     runcmd("sed -i 's/://' tmp")
