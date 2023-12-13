@@ -7,6 +7,9 @@ stats -t 'task*' -f PBE -m 'pddd'
 """
 
 import argparse
+import subprocess
+import numpy as np
+    
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -34,20 +37,9 @@ def argument_parse():
     parser.add_argument("-r","--range",dest='range',metavar='range',type=str,
                         default='-1000,1000',
                         required=False,)
-    args=parser.parse_args()
-    return parser, args
+    return parser
 
-parser, args = argument_parse()
-
-import subprocess, sys
-import numpy as np
-
-mode = args.mode
-shift = 0
-if 'dd' in mode:
-    shift += 7
-#if 'mc' in mode:
-#    shift += 9
+parser = argument_parse()
 
 class suData():
     def __init__(self, data):
@@ -87,74 +79,83 @@ FUN_param = {
 def get_param(fun):
     return FUN_param[fun.lower()]
 
-h, k = get_param(args.fun) #float(sys.argv[2])
-#float(sys.argv[3])
-task = args.task
-rscale = args.rscale #float(sys.argv[4])
-sub = bool(args.sub) #bool(sys.argv[5])
-
-filelist = runcmd("ls %s" % task).strip().split('\n')
-print(filelist)
-
-lim = [0,0]
-r_range = args.range.split(',')
-lim[0] = float(r_range[0])
-lim[1] = float(r_range[1])
-
-print("        SUDD       SUPD       SUHF       SUPD(h)      SUPD(h,k)")
-#exit()
-
-x = []
-e_dd = []
-e_pd = []
-e_su = []
-e_supdh = []
-e_supdk = []
-for s in filelist:
-    #r = s.replace(task, '').replace('.out', '')
-    r = s.split('_')[-1].split('.')[0]
-    if r[0].isdigit():
-        if float(r)/rscale < lim[0] or float(r)/rscale > lim[1]:
-            continue
-    #print(s, r)
-    runcmd("cp %s tmp" % s)
-    runcmd("sed -i 's/://' tmp")
-    p = runcmd("grep ^E_ tmp | awk '{print $2}'")
-    data = p.split('\n')
-    #print(data)
-    su = suData(data)
-    print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
-    if r[0].isdigit():
-        x.append(float(r)/rscale)
-    else:
-        x.append(-1)
-    e_dd.append(su.sudd(0.0))
-    e_pd.append(su.supd(0.0))
-    e_su.append(su.suhf)
-    e_supdh.append(su.supd(h))
-    e_supdk.append(su.supd_k(h,k))
-
-#exit()
-def sub_atom(lst):
-    array = np.array(lst)
-    return array[:-2] - array[-1] - array[-2]
-
-Ha2ev = 27.21138602
-if sub:
-    print("subtract by atom e. in eV")
-    print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
-    x_sub = np.array(x)[:-2]
-    e_dd_sub = sub_atom(e_dd)*Ha2ev
-    e_pd_sub = sub_atom(e_pd)*Ha2ev
-    e_su_sub = sub_atom(e_su)*Ha2ev
-    e_supdh_sub = sub_atom(e_supdh)*Ha2ev
-    e_supdk_sub = sub_atom(e_supdk)*Ha2ev
-    for i in range(len(x_sub)):
-        print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
-              e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
-
-#exit()
-from .interp import spline_findmin
-if args.interp:
-    for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdh_sub, e_supdk_sub]:
-        spline_findmin(x_sub, y)
+if __name__ == '__main__':
+    args=parser.parse_args()
+    
+    mode = args.mode
+    shift = 0
+    if 'dd' in mode:
+        shift += 7
+    #if 'mc' in mode:
+    #    shift += 9
+    h, k = get_param(args.fun) #float(sys.argv[2])
+    #float(sys.argv[3])
+    task = args.task
+    rscale = args.rscale #float(sys.argv[4])
+    sub = bool(args.sub) #bool(sys.argv[5])
+    
+    filelist = runcmd("ls %s" % task).strip().split('\n')
+    print(filelist)
+    
+    lim = [0,0]
+    r_range = args.range.split(',')
+    lim[0] = float(r_range[0])
+    lim[1] = float(r_range[1])
+    
+    print("        SUDD       SUPD       SUHF       SUPD(h)      SUPD(h,k)")
+    #exit()
+    
+    x = []
+    e_dd = []
+    e_pd = []
+    e_su = []
+    e_supdh = []
+    e_supdk = []
+    for s in filelist:
+        #r = s.replace(task, '').replace('.out', '')
+        r = s.split('_')[-1].split('.')[0]
+        if r[0].isdigit():
+            if float(r)/rscale < lim[0] or float(r)/rscale > lim[1]:
+                continue
+        #print(s, r)
+        runcmd("cp %s tmp" % s)
+        runcmd("sed -i 's/://' tmp")
+        p = runcmd("grep ^E_ tmp | awk '{print $2}'")
+        data = p.split('\n')
+        #print(data)
+        su = suData(data)
+        print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
+        if r[0].isdigit():
+            x.append(float(r)/rscale)
+        else:
+            x.append(-1)
+        e_dd.append(su.sudd(0.0))
+        e_pd.append(su.supd(0.0))
+        e_su.append(su.suhf)
+        e_supdh.append(su.supd(h))
+        e_supdk.append(su.supd_k(h,k))
+    
+    #exit()
+    def sub_atom(lst):
+        array = np.array(lst)
+        return array[:-2] - array[-1] - array[-2]
+    
+    Ha2ev = 27.21138602
+    if sub:
+        print("subtract by atom e. in eV")
+        print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
+        x_sub = np.array(x)[:-2]
+        e_dd_sub = sub_atom(e_dd)*Ha2ev
+        e_pd_sub = sub_atom(e_pd)*Ha2ev
+        e_su_sub = sub_atom(e_su)*Ha2ev
+        e_supdh_sub = sub_atom(e_supdh)*Ha2ev
+        e_supdk_sub = sub_atom(e_supdk)*Ha2ev
+        for i in range(len(x_sub)):
+            print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
+                  e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
+    
+    #exit()
+    from .interp import spline_findmin
+    if args.interp:
+        for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdh_sub, e_supdk_sub]:
+            spline_findmin(x_sub, y)

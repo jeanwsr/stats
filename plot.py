@@ -6,24 +6,19 @@ import numpy as np
 
 import argparse
 
-def argument_parse():
-    parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                               description='')
-    parser.add_argument("input",type=str,#default='dump',
+def plot_parse():
+    p=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+                               description='plot')
+    p.add_argument("input",type=str,#default='dump',
                         help='')
-    parser.add_argument("-x","--show", action="store_true",
+    p.add_argument("-x","--show", action="store_true",
                         required=False, 
                         help='')
-    parser.add_argument("-l","--loc", type=str, dest='loc', metavar='loc', default='lower right',
+    p.add_argument("-l","--loc", type=str, dest='loc', metavar='loc', default='lower right',
                         required=False, 
                         help='')
-    args=parser.parse_args()
-    return parser, args
-
-parser, args = argument_parse()
-datafile = args.input
-x, ys, series = get_curves(datafile)
-print(series)
+    return p
+p = plot_parse()
 
 def get_curves(resfile):
     f = open(resfile, 'r')
@@ -46,17 +41,19 @@ def get_curves(resfile):
                 else:
                     break
             break
+        elif not line:
+            break
     f.close()
     
     x = np.array(x)
     ys = np.array(y)
     return x, ys, series
 
-from .interp import spline_findmin
-
+from interp import spline_findmin
 spline = spline_findmin
 
 def plot(x, y):
+    #print(x, y)
     samp = np.linspace(x[0], x[-1], 100)
     func, point = spline(x, y)
     y_samp = func(samp)
@@ -65,15 +62,23 @@ def plot(x, y):
     plt.plot([point[0]], [point[1]], 'ro', markersize=3)
     return l
 
-plt.rc('font', size=12)
-plt_lines = []
-for i in range(1,5):
-    l = plot(x, ys[:,i])
-    plt_lines.append(l)
-plt.xlabel('R / $\AA$')
-plt.ylabel('E / a.u.')
-plt.ylim(None, 1.0)
-plt.legend(handles = plt_lines, labels = ['SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)'], loc=args.loc)
-if args.show:
-    plt.show()
-plt.savefig(datafile+'.png')
+if __name__ == "__main__":
+    args = p.parse_args()
+    datafile = args.input
+    x, ys, series = get_curves(datafile)
+    print(series)
+    
+    plt.rc('font', size=12)
+    plt_lines = []
+    print(ys)
+    for i in range(1,ys.shape[1]):
+        l = plot(x, ys[:,i])
+        plt_lines.append(l)
+    plt.xlabel('R / $\AA$')
+    plt.ylabel('E / a.u.')
+    plt.ylim(None, 1.0)
+    plt.legend(handles = plt_lines, labels = ['SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)'], loc=args.loc)
+    if args.show:
+        plt.show()
+    plt.savefig(datafile+'.png')
+    

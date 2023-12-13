@@ -8,5 +8,5 @@ def spline_findmin(x, y):
     res = root(deriv, x[2])
     print('root:    %.6f' %res.x)
     print('y(root): %.6f' %f(res.x))
-    return res.x
+    return f, (res.x, f(res.x))
 
