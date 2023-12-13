@@ -2,6 +2,8 @@
 """
 Parse SUPDFT output;
 Interpolate dissociation curve
+
+stats -t 'task*' -f PBE -m 'pddd'
 """
 
 import argparse
@@ -99,7 +101,7 @@ r_range = args.range.split(',')
 lim[0] = float(r_range[0])
 lim[1] = float(r_range[1])
 
-print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
+print("        SUDD       SUPD       SUHF       SUPD(h)      SUPD(h,k)")
 #exit()
 
 x = []
@@ -121,7 +123,7 @@ for s in filelist:
     data = p.split('\n')
     #print(data)
     su = suData(data)
-    print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
+    print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
     if r[0].isdigit():
         x.append(float(r)/rscale)
     else:
@@ -152,16 +154,7 @@ if sub:
               e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
 
 #exit()
-from scipy.interpolate import make_interp_spline as spl
-from scipy.optimize import root
-def spline_findmin(x, y):
-    f = spl(x, y, k=3)
-    deriv = f.derivative()
-    res = root(deriv, x[2])
-    print('root:    %.6f' %res.x)
-    print('y(root): %.6f' %f(res.x))
-    return res.x
-
+from .interp import spline_findmin
 if args.interp:
     for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdh_sub, e_supdk_sub]:
         spline_findmin(x_sub, y)

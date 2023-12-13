@@ -22,40 +22,39 @@ def argument_parse():
 
 parser, args = argument_parse()
 datafile = args.input
-f = open(datafile, 'r')
+x, ys, series = get_curves(datafile)
+print(series)
 
-x = []
-y = []
-while(True):
-    line = f.readline()
-    if line[:3] == 'sub':
-        f.readline()
-        while(True):
-            line = f.readline()
-            if line[0].isdigit():
-                print(line)
-                raw = line.split()
-                print(raw)
-                data = [float(k) for k in raw]
-                x.append(data[0])
-                y.append([data[1], data[2], data[3], data[4], data[5]])
-            else:
-                break
-        break
-f.close()
+def get_curves(resfile):
+    f = open(resfile, 'r')
+    x = []
+    y = []
+    while(True):
+        line = f.readline()
+        if line[:3] == 'sub':
+            seriesline = f.readline()
+            series = seriesline.split()
+            while(True):
+                line = f.readline()
+                if line[0].isdigit():
+                    #print(line)
+                    raw = line.split()
+                    #print(raw)
+                    data = [float(k) for k in raw]
+                    x.append(data[0])
+                    y.append([data[1], data[2], data[3], data[4], data[5]])
+                else:
+                    break
+            break
+    f.close()
+    
+    x = np.array(x)
+    ys = np.array(y)
+    return x, ys, series
 
-x = np.array(x)
-y = np.array(y)
+from .interp import spline_findmin
 
-from scipy.interpolate import make_interp_spline as spl
-from scipy.optimize import root
-def spline(x, y):
-    f = spl(x, y, k=3)
-    deriv = f.derivative()
-    res = root(deriv, x[2])
-    print('root:    %.6f' %res.x)
-    print('y(root): %.6f' %f(res.x))
-    return f, (res.x, f(res.x))
+spline = spline_findmin
 
 def plot(x, y):
     samp = np.linspace(x[0], x[-1], 100)
@@ -69,7 +68,7 @@ def plot(x, y):
 plt.rc('font', size=12)
 plt_lines = []
 for i in range(1,5):
-    l = plot(x, y[:,i])
+    l = plot(x, ys[:,i])
     plt_lines.append(l)
 plt.xlabel('R / $\AA$')
 plt.ylabel('E / a.u.')
