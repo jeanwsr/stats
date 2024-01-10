@@ -6,7 +6,7 @@ def spline_findmin(x, y):
     f = spl(x, y, k=3)
     deriv = f.derivative()
     res = root(deriv, x[2])
-    print('root:    %.6f' %res.x)
-    print('y(root): %.6f' %f(res.x))
-    return f, (res.x, f(res.x))
+    yroot = f(res.x)
+    return f, (res.x, yroot)
+
 
