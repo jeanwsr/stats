@@ -31,6 +31,9 @@ def get_unit(line):
         unit = 'eV'
     elif 'kcal' in line.lower():
         unit = 'kcal'
+    else:
+        print("unit not recognized in res file, use kcal")
+        unit = 'kcal'
     return unit
 
 def get_curves(resfile):
@@ -51,7 +54,8 @@ def get_curves(resfile):
                     #print(raw)
                     data = [float(k) for k in raw]
                     x.append(data[0])
-                    y.append([data[1], data[2], data[3], data[4], data[5]])
+                    #y.append([data[1], data[2], data[3], data[4], data[5]])
+                    y.append(data[1:])
                 else:
                     break
             break
@@ -85,7 +89,7 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
         funcs.append(func)
         minpoints.append(minpoint)
     if point is not None:
-        for i in range(1,ys.shape[1]):
+        for i in range(ys.shape[1]):
             if len(labels[i]) > 0:
                 print('%20s point: %.6f  y(point): %.6f' %(labels[i], point, funcs[i](point)*scal))
     return funcs, minpoints
@@ -105,7 +109,7 @@ def plot_all(x, funcs, minpoints, labels, loc, show, datafile):
     plt.rc('font', size=12)
     plt_lines = []
     #print(ys)
-    for i in range(1,ys.shape[1]):
+    for i in range(ys.shape[1]):
         if len(labels[i]) > 0:
             l = plot(x, funcs[i], minpoints[i], label=labels[i])
             plt_lines.append(l)
@@ -132,11 +136,12 @@ if __name__ == "__main__":
     args = p.parse_args()
     datafile = args.input
     x, ys, series, dataunit = get_curves(datafile)
+    n_curves = ys.shape[1]
     print(series)
     scal = scal_factor(dataunit, args.unit)
     print("perform unit convertion: %s -> %s, factor: %.6f" % (dataunit, args.unit, scal))
     labels = ['', 'SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)']
     
-    funcs, minpoints = interp_all(x, ys, labels=labels, point=args.point, scal=scal)
+    funcs, minpoints = interp_all(x, ys, labels=labels[-n_curves:], point=args.point, scal=scal)
     if not args.noplot:
-        plot_all(x, funcs, minpoints, labels, args.loc, args.show, datafile)
+        plot_all(x, funcs, minpoints, labels[-n_curves:], args.loc, args.show, datafile)
