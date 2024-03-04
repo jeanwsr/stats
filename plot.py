@@ -21,6 +21,7 @@ def plot_parse():
                         required=False, 
                         help='')
     p.add_argument("-n","--noplot", action="store_true", required=False, help='')
+#    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
     return p
 p = plot_parse()
@@ -136,6 +137,9 @@ if __name__ == "__main__":
     args = p.parse_args()
     datafile = args.input
     x, ys, series, dataunit = get_curves(datafile)
+#    if args.save:
+#        import db
+#        db.save(x, ys, series, unit=dataunit)
     n_curves = ys.shape[1]
     print(series)
     scal = scal_factor(dataunit, args.unit)
