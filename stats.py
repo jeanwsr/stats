@@ -29,7 +29,7 @@ def argument_parse():
     parser.add_argument("-S","--sub", action='store_true',
                         required=False,)
     parser.add_argument("-m","--mode",dest='mode',metavar='mode',type=str,
-                        default='supd',
+                        default='supddd',
                         required=False,)
     parser.add_argument("-i","--interp", action='store_true',
                         required=False,)
@@ -37,8 +37,8 @@ def argument_parse():
                         default='-1000,1000',
                         required=False,)
     parser.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
-    parser.add_argument("-s","--save", type=str, dest='save', metavar='save',
-                        default = 'testshelf', required=False, help='')
+    parser.add_argument("--save", type=str, dest='save', metavar='save',
+                        default = '', required=False, help='')
     return parser
 
 parser = argument_parse()
@@ -54,7 +54,9 @@ if __name__ == '__main__':
     rscale = args.rscale #float(sys.argv[4])
     sub = bool(args.sub) #bool(sys.argv[5])
     save = len(args.save) > 0
-    shelfname = args.save
+    shelfname, molname = args.save.split(':')
+    if (len(shelfname) < 1 or len(molname) < 1) and save:
+        raise ValueError('invalid shelfname or molname')
     
     filelist = runcmd("ls %s" % task).strip().split('\n')
     print(filelist)
@@ -102,7 +104,7 @@ if __name__ == '__main__':
     
     if save:
         ys = np.array(raw_ys).T
-        db.save(x, ys, su.series(), shelfname, )
+        db.save(x, ys, su.series(), shelfname, molname)
     #exit()
     def sub_atom(lst):
         array = np.array(lst)
