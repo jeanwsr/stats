@@ -37,6 +37,7 @@ def argument_parse():
     parser.add_argument("-r","--range",dest='range',metavar='range',type=str,
                         default='-1000,1000',
                         required=False,)
+    parser.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
     return parser
 
 parser = argument_parse()
@@ -74,10 +75,23 @@ FUN_param = {
     'suhf': [1.0, 1.0],
     'pbe': [0.0, 1.0],
     'pbe0': [0.25, 1.0],
-    'pbe02': [0.25, 2.0]
+    'pbe02': [0.25, 2.0],
+    'blyp': [0.0, 1.0],
+    'b3lyp': [0.2,1.0],
+    'blyp02': [0.2,2.0]
 }
 def get_param(fun):
     return FUN_param[fun.lower()]
+
+def to_unit(unit):
+    Ha2ev = 27.211386
+    Ha2kcal = 627.509474
+    if unit.lower() == 'kcal':
+        return Ha2kcal
+    elif unit.lower() == 'ev':
+        return Ha2ev
+    else:
+        raise ValueError("unit not recognized")
 
 if __name__ == '__main__':
     args=parser.parse_args()
@@ -140,22 +154,22 @@ if __name__ == '__main__':
         array = np.array(lst)
         return array[:-2] - array[-1] - array[-2]
     
-    Ha2ev = 27.21138602
+    scal = to_unit(args.unit)
     if sub:
-        print("subtract by atom e. in eV")
+        print("subtract by atom e. in %s"%args.unit)
         print("     SUDD    SUPD    SUHF    SUPD(h)   SUPD(h,k)")
         x_sub = np.array(x)[:-2]
-        e_dd_sub = sub_atom(e_dd)*Ha2ev
-        e_pd_sub = sub_atom(e_pd)*Ha2ev
-        e_su_sub = sub_atom(e_su)*Ha2ev
-        e_supdh_sub = sub_atom(e_supdh)*Ha2ev
-        e_supdk_sub = sub_atom(e_supdk)*Ha2ev
+        e_dd_sub = sub_atom(e_dd)*scal
+        e_pd_sub = sub_atom(e_pd)*scal
+        e_su_sub = sub_atom(e_su)*scal
+        e_supdh_sub = sub_atom(e_supdh)*scal
+        e_supdk_sub = sub_atom(e_supdk)*scal
         for i in range(len(x_sub)):
             print('%s  %6.3f %6.3f %6.3f %6.3f %6.3f'%(x_sub[i], 
                   e_dd_sub[i], e_pd_sub[i], e_su_sub[i], e_supdh_sub[i], e_supdk_sub[i]))
     
     #exit()
-    from .interp import spline_findmin
+    from interp import spline_findmin
     if args.interp:
         for y in [e_dd_sub, e_pd_sub, e_su_sub, e_supdh_sub, e_supdk_sub]:
             spline_findmin(x_sub, y)
