@@ -3,6 +3,9 @@ import shelve
 def save_from_txt(datafile, shelfname, molname, tag='none'):
     from plot import datafile
     x, ys, series, dataunit = get_curves(datafile)
+    save(x, ys, series, shelfname, molname, tag)
+
+def save(x, ys, series, shelfname, molname, tag='none'):
     curve_series = {}
     curve_series['name'] = molname
     curve_series['tag'] = tag

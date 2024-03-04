@@ -7,9 +7,8 @@ stats -t 'task*' -f PBE -m 'pddd'
 """
 
 import argparse
-import subprocess
 import numpy as np
-    
+from statutil import suData, get_param, runcmd, to_unit   
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -38,75 +37,24 @@ def argument_parse():
                         default='-1000,1000',
                         required=False,)
     parser.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
+    parser.add_argument("-s","--save", type=str, dest='save', metavar='save',
+                        default = 'testshelf', required=False, help='')
     return parser
 
 parser = argument_parse()
 
-class suData():
-    def __init__(self, data):
-        self.suhf = float(data[0])
-        self.j = float(data[3])
-        self.k = float(data[4])
-        self.c = float(data[5])
-        if 'dd' in mode:
-            self.ddxc = float(data[6])
-        self.otx = float(data[6+shift])
-        self.otc = float(data[7+shift])
-        self.otxc = float(data[8+shift])
-    
-    def sudd(self, hyb):
-        if hasattr(self, 'ddxc'):
-            return self.suhf + (self.ddxc - self.k - self.c)*(1.0-hyb)
-        else:
-            return 0.0
-    def supd(self, hyb):
-        return self.suhf + (self.otxc - self.k - self.c)*(1.0-hyb)
-    def supd_k(self, hyb, k):
-        return self.suhf + (self.otx - self.k - self.c)*(1.0-hyb) + (1.0-hyb**k)*self.otc
-
-def runcmd(cmd):
-    p = subprocess.Popen(cmd, 
-         shell=True,
-         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-         encoding='utf-8').communicate()[0]
-    return p
-
-FUN_param = {
-    'suhf': [1.0, 1.0],
-    'pbe': [0.0, 1.0],
-    'pbe0': [0.25, 1.0],
-    'pbe02': [0.25, 2.0],
-    'blyp': [0.0, 1.0],
-    'b3lyp': [0.2,1.0],
-    'blyp02': [0.2,2.0]
-}
-def get_param(fun):
-    return FUN_param[fun.lower()]
-
-def to_unit(unit):
-    Ha2ev = 27.211386
-    Ha2kcal = 627.509474
-    if unit.lower() == 'kcal':
-        return Ha2kcal
-    elif unit.lower() == 'ev':
-        return Ha2ev
-    else:
-        raise ValueError("unit not recognized")
 
 if __name__ == '__main__':
     args=parser.parse_args()
     
     mode = args.mode
-    shift = 0
-    if 'dd' in mode:
-        shift += 7
-    #if 'mc' in mode:
-    #    shift += 9
     h, k = get_param(args.fun) #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task
     rscale = args.rscale #float(sys.argv[4])
     sub = bool(args.sub) #bool(sys.argv[5])
+    save = len(args.save) > 0
+    shelfname = args.save
     
     filelist = runcmd("ls %s" % task).strip().split('\n')
     print(filelist)
@@ -125,6 +73,7 @@ if __name__ == '__main__':
     e_su = []
     e_supdh = []
     e_supdk = []
+    raw_ys = []
     for s in filelist:
         #r = s.replace(task, '').replace('.out', '')
         r = s.split('_')[-1].split('.')[0]
@@ -137,7 +86,9 @@ if __name__ == '__main__':
         p = runcmd("grep ^E_ tmp | awk '{print $2}'")
         data = p.split('\n')
         #print(data)
-        su = suData(data)
+        su = suData(data, mode)
+        if save:
+            raw_ys.append(su.res())
         print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
         if r[0].isdigit():
             x.append(float(r)/rscale)
@@ -149,6 +100,9 @@ if __name__ == '__main__':
         e_supdh.append(su.supd(h))
         e_supdk.append(su.supd_k(h,k))
     
+    if save:
+        ys = np.array(raw_ys).T
+        db.save(x, ys, su.series(), shelfname, )
     #exit()
     def sub_atom(lst):
         array = np.array(lst)
