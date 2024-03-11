@@ -9,6 +9,7 @@ stats -t 'task*' -f PBE -m 'pddd'
 import argparse
 import numpy as np
 from statutil import suData, get_param, runcmd, to_unit   
+import db
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -54,9 +55,10 @@ if __name__ == '__main__':
     rscale = args.rscale #float(sys.argv[4])
     sub = bool(args.sub) #bool(sys.argv[5])
     save = len(args.save) > 0
-    shelfname, molname = args.save.split(':')
-    if (len(shelfname) < 1 or len(molname) < 1) and save:
-        raise ValueError('invalid shelfname or molname')
+    if save:
+        shelfname, molname = args.save.split(':')
+        if (len(shelfname) < 1 or len(molname) < 1):
+            raise ValueError('invalid shelfname or molname')
     
     filelist = runcmd("ls %s" % task).strip().split('\n')
     print(filelist)
@@ -103,7 +105,7 @@ if __name__ == '__main__':
         e_supdk.append(su.supd_k(h,k))
     
     if save:
-        ys = np.array(raw_ys).T
+        ys = np.array(raw_ys)
         db.save(x, ys, su.series(), shelfname, molname)
     #exit()
     def sub_atom(lst):

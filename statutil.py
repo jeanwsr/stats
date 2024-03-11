@@ -2,7 +2,7 @@
 import subprocess
 
 class suData():
-    def __init__(self, data):
+    def __init__(self, data, mode):
         shift = 0
         if 'dd' in mode:
             shift += 7
@@ -18,10 +18,10 @@ class suData():
         self.otc = float(data[7+shift])
         self.otxc = float(data[8+shift])
 
-    def series():
+    def series(self):
         return ['suhf', 'j', 'k', 'c', 'ddxc', 'otx', 'otc', 'otxc']
     
-    def res():
+    def res(self):
         if getattr(self, 'ddxc', None) is None: self.ddxc = 0.0
         return [self.suhf, self.j, self.k, self.c, self.ddxc, self.otx, self.otc, self.otxc]
     
