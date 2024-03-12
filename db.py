@@ -20,10 +20,13 @@ def save(x, ys, series, shelfname, molname, tag='none'):
     d['serie_%s.%s'%(molname,tag)] = curve_series
     d.close()
 
-def dump(serie):
+def dump(serie, short=False):
     np.set_printoptions(linewidth=400)
     print("name: %s tag: %s"%(serie['name'], serie['tag']))
-    print("x: ", serie['x'])
-    for k in serie.keys():
-        if k not in ['name', 'tag', 'x']:
-            print("%s: "%k, serie[k])
+    if short:
+        print("len(x): %d"%len(serie['x']))
+    else:
+        print("x: ", serie['x'])
+        for k in serie.keys():
+            if k not in ['name', 'tag', 'x']:
+                print("%s: "%k, serie[k])
