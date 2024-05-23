@@ -10,3 +10,6 @@ def spline_findmin(x, y):
     return f, (res.x, yroot)
 
 
+def spline(x, y):
+    f = spl(x, y, k=3)
+    return f

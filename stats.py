@@ -80,7 +80,7 @@ if __name__ == '__main__':
     raw_ys = []
     for s in filelist:
         #r = s.replace(task, '').replace('.out', '')
-        r = s.split('_')[-1].split('.')[0]
+        r = s.split('_')[-1].split('.out')[0]
         if r[0].isdigit():
             if float(r)/rscale < lim[0] or float(r)/rscale > lim[1]:
                 continue
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         su = suData(data, mode)
         if save:
             raw_ys.append(su.res())
-        print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
+        print('%.1f  %6.6f %6.6f %6.6f %6.6f %6.6f'%(float(r), su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
         if r[0].isdigit():
             x.append(float(r)/rscale)
         else:
