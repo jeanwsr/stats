@@ -34,6 +34,20 @@ class suData():
         return self.suhf + (self.otxc - self.k - self.c)*(1.0-hyb)
     def supd_k(self, hyb, k):
         return self.suhf + (self.otx - self.k - self.c)*(1.0-hyb) + (1.0-hyb**k)*self.otc
+    
+    def get_elabels(self, labels):
+        elabels = {}
+        for label in labels:
+            if isinstance(label, str):
+                h, k = FUN_param[label]
+            elif isinstance(label, tuple):
+                h, k = label[1], label[2]
+            elabels[label] = self.supd_k(h, k)
+        return elabels
+
+class suDataDB(suData):
+    def __init__(self, datadict):
+        self.__dict__.update(datadict)
 
 def runcmd(cmd):
     p = subprocess.Popen(cmd, 
@@ -51,6 +65,7 @@ FUN_param = {
     'b3lyp': [0.2,1.0],
     'blyp02': [0.2,2.0]
 }
+
 def get_param(fun):
     return FUN_param[fun.lower()]
 
@@ -61,5 +76,7 @@ def to_unit(unit):
         return Ha2kcal
     elif unit.lower() == 'ev':
         return Ha2ev
+    elif unit.lower() == 'au':
+        return 1.0
     else:
         raise ValueError("unit not recognized")

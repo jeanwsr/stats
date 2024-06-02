@@ -67,6 +67,7 @@ if __name__ == '__main__':
         name0, name1 = s.split('.out')[0].split('_')
         if label == 'none':
             spc = name1 # sio_si.out -> si
+            x = None
         elif label == 'ref':
             # sio_151.3.out -> sio, 151.3
             spc = name0
