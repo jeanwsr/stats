@@ -3,23 +3,50 @@ import tomli
 import shelve
 import sys
 from statutil import suDataDB, to_unit
+import numpy as np
 
-LABELS = ['suhf', 'pbe', 'pbe0', 'pbe02', 
-          ('pbe', 0.25, 2.5),
-          ('pbe', 0.25, 3.0),
-          ('pbe', 0.2, 2.0),
-          ('pbe', 0.2, 2.5),
-          ('pbe', 0.2, 3.0)
-          ]
+#LABELS = ['suhf', 'pbe', 'pbe0', 'pbe02']
+LABELS = ['pbe02', 'ent5']
+
+class FitParam:
+    def __init__(self):
+        self.hmin = 0.15
+        self.hmax = 0.5
+        self.kmin = 1.5
+        self.kmax = 3.5
+        self.potk = 0.0
+        self.potcmin = 0.25
+        self.potcmax = 0.75
+        self.hstep = 0.05
+        self.kstep = 0.5
+        self.cstep = 0.05
+        self.theta = 0.00
+
+    def gen_labels(self):
+        labels = []
+        for h in np.arange(self.hmin, self.hmax+0.01, self.hstep):
+            for k in np.arange(self.kmin, self.kmax+0.01, self.kstep):
+                labels.append(('pbe', h, k, self.theta))
+        return labels
+
+    def gen_labels_potc(self):
+        labels = []
+        print(f"hmin: {self.hmin}, hmax: {self.hmax}, hstep: {self.hstep}")
+        print(f"potcmin: {self.potcmin}, potcmax: {self.potcmax}, cstep: {self.cstep}")
+        for h in np.arange(self.hmin, self.hmax+0.01, self.hstep):
+           for potc in np.arange(self.potcmin, self.potcmax+0.01, self.cstep):
+                labels.append(('pbe', h, 0.0, 0.0, (self.potk, potc)))
+        return labels
+
+
 def toml_load(toml, domain):
     with open(toml, 'rb') as f:
         equations = tomli.load(f)[domain]
     return equations
 
-def get_eq_energy(shelf, toml):
-    '''
-    energy for some equation like B2 -> B + B
-    '''
+def get_eq_energy(shelf, toml, mode='label', labels=LABELS):
+    params = FitParam()
+    params.__dict__.update(toml_load(toml, 'param'))
     equations = toml_load(toml, 'spc')
     print(equations)
     ref = toml_load(toml, 'ref')
@@ -38,7 +65,17 @@ def get_eq_energy(shelf, toml):
             e_data[name] = data
     print(e_data.keys())
     #print(e_data)
-    e_data = update_elabel(e_data, labels=LABELS)
+    if mode == 'label':
+        pass
+        #labels = LABELS
+    elif mode == 'scan':
+        labels = params.gen_labels()
+    elif mode == 'scan3':
+        labels = params.gen_labels()
+        print(labels)
+    elif mode == 'scan_potc':
+        labels = params.gen_labels_potc()
+    e_data = update_elabel(e_data, labels=labels)
     eq_energy = {}
     for eq in equations:
         left_spc = eq
@@ -48,11 +85,19 @@ def get_eq_energy(shelf, toml):
             raise ValueError('eq %s not in e_data'%eq)
         left_data = e_data[eq]
         right_data = [e_data[s] for s in right_spc]
-        eq_data = sub_eq(left_data, right_data, labels=LABELS, unit='kcal')
-        print(eq_data)
+        eq_data = sub_eq(left_data, right_data, labels=labels, unit='kcal')
+        #print(eq_data)
         eq_energy[eq] = eq_data
-    eq_deviation = sub_ref(eq_energy, ref)
+    eq_deviation = sub_ref(eq_energy, ref, mode)
     #print(eq_deviation)
+    for eq in eq_deviation:
+        print(eq)
+        dump_dev(eq_deviation[eq], params, mode)
+    mad, maxd = get_mad(eq_deviation, labels)
+    print('MAD')
+    dump_dev(mad, params, mode)
+    print('MaxD')
+    dump_dev(maxd, params, mode)
     return eq_energy
         
 
@@ -70,12 +115,15 @@ def sub_eq(left, right, labels=['suhf'], unit='au'):
     scal = to_unit(unit)
     for label in labels:
         left_e = left[label]
-        right_e = sum([r[label] for r in right])
+        right_es = [r[label] for r in right]
+        right_e = sum(right_es)
+        if 'ent' in label:
+            print('ent5', left_e, right_es)
         eq_e = right_e - left_e
         eq_data[label] = eq_e*scal
     return eq_data
 
-def sub_ref(eq_e, ref):
+def sub_ref(eq_e, ref, mode):
     '''
     data: dict
     ref: dict
@@ -88,8 +136,8 @@ def sub_ref(eq_e, ref):
         for label in e:
             eq_dev[label] = e[label] - ref_e
         eq_deviation[eq] = eq_dev
-        print(eq)
-        dump_dev(eq_dev)
+        #print(eq)
+        #dump_dev(eq_dev, mode)
     return eq_deviation
 
 def update_elabel(e_data, labels=['suhf']):
@@ -104,11 +152,44 @@ def update_elabel(e_data, labels=['suhf']):
     #print(e_data)
     return e_data
 
-def dump_dev(dev):
-    p02, p025, p03 = dev['pbe02'], dev[('pbe', 0.25, 2.5)], dev[('pbe', 0.25, 3.0)]
-    pm2, pm25, pm3 = dev[('pbe', 0.2, 2.0)], dev[('pbe', 0.2, 2.5)], dev[('pbe', 0.2, 3.0)]
-    print("%.3f %.3f %.3f" % (p02, p025, p03))
-    print("%.3f %.3f %.3f" % (pm2, pm25, pm3))
+
+
+def dump_dev(dev, param, mode='scan'):
+    if 'pbe02' in dev:
+        for k, e in dev.items():
+            print(k, " %.3f" % e)
+    if mode == 'scan':
+        for h in np.arange(param.hmin, param.hmax+0.01, param.hstep):
+            for k in np.arange(param.kmin, param.kmax+0.01, param.kstep):
+                t = param.theta
+                print("%2.3f" % dev[('pbe', h, k, t)], end=' ')
+            print()
+    elif mode == 'scan_potc':
+        print("   ", end=' ')
+        for potc in np.arange(param.potcmin, param.potcmax+0.01, param.cstep):
+            print("  &%.2f" % potc, end=' ')
+        print('\\\\')
+        for h in np.arange(param.hmin, param.hmax+0.01, param.hstep):
+            print("%.2f" % h, end=' ')
+            for potc in np.arange(param.potcmin, param.potcmax+0.01, param.cstep):
+                print("&%2.3f" % dev[('pbe', h, 0.0, 0.0, (param.potk, potc))], end=' ')
+            print('\\\\')
+
+def get_mad(eq_deviation, labels):
+    mad = {}
+    maxd = {}
+    for label in labels:
+        m = 0.0
+        mx = 0.0
+        for eq in eq_deviation:
+            dev = eq_deviation[eq][label]
+            m += abs(dev)
+            if abs(dev) > mx:
+                mx = abs(dev)
+        m /= len(eq_deviation)
+        mad[label] = m
+        maxd[label] = mx
+    return mad, maxd
 
 if __name__ == '__main__':
-    get_eq_energy(sys.argv[1], sys.argv[2])
+    get_eq_energy(sys.argv[1], sys.argv[2], sys.argv[3])

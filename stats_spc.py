@@ -2,6 +2,9 @@
 
 """
 stats_spc.py -t 'task*' -f PBE02 [-l ref] [--save ../shelf]
+
+-l ref for reference minimum, e.g. sio_151.3.out
+-l none (default) for out without x, e.g. sio_si.out
 """
 
 import argparse
@@ -41,7 +44,8 @@ if __name__ == '__main__':
     args=parser.parse_args()
     
     mode = args.mode
-    h, k = get_param(args.fun) #float(sys.argv[2])
+    do_ent = False
+    h, k = get_param(args.fun)[:2] #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task
     rscale = args.rscale 
@@ -81,11 +85,19 @@ if __name__ == '__main__':
         runcmd("sed -i 's/://' tmp")
         p = runcmd("grep ^E_ tmp | awk '{print $2}'")
         data = p.split('\n')
-        #print(data)
-        su = suData(data, mode)
+        if do_ent:
+            p2a = runcmd("grep '^SUHF NO occ alpha' tmp")
+            p2b = runcmd("grep '^SUHF NO occ beta' tmp")
+            occdata = p2a.split('alpha')[1].split()[:-1], p2b.split('beta')[1].split()[:-1]
+        else:
+            occdata = None
+        #print(occdata)
+        su = suData(data, mode, occdata=occdata)
         if save:
             raw_ys = su.res()
         print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%('_'.join((name0, name1)), su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
+        if do_ent:
+            print('natocc_a:', su.natocc_a, 'ent:', su.ent)
         #if r[0].isdigit():
         #    x.append(float(r)/rscale)
         #else:
