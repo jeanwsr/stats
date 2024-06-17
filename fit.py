@@ -7,6 +7,10 @@ import numpy as np
 
 #LABELS = ['suhf', 'pbe', 'pbe0', 'pbe02']
 LABELS = ['pbe02', 'ent5']
+LABELS_c = ['suhf', 'pbe02', 
+            ('pbe', 'p3', 0.25, 0.0, 0.40),
+            ('pbe', 'p3', 0.35, 0.0, 0.55),
+            ('pbe', 'p3', 0.40, 0.0, 0.65)]
 
 class FitParam:
     def __init__(self):
@@ -99,20 +103,63 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS):
     print('MaxD')
     dump_dev(maxd, params, mode)
     return eq_energy
-        
+
+def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_c):
+    equations = {'n2': 'n+n'}
+    e_serie = {}
+    e_spc = {}
+    with shelve.open(shelf) as f:
+        items = f.keys()
+        for eq in equations:
+            e_serie[eq] = f['serie_'+eq.upper()+'.none']
+        for serie in items:
+            if 'spc' not in serie or 'ref' in serie:
+                continue
+            name = f[serie]['name']
+            e_spc[name] = f[serie]
+        print(e_serie)
+        print(e_spc['n'])
+    e_serie = update_elabel(e_serie, labels=labels)
+    print(e_serie)
+    e_spc = update_elabel(e_spc, labels=labels)
+    eq_energy = {}
+    for eq in equations:
+        left_spc = eq
+        right_spc = parse_eq(equations[eq])
+        print(left_spc, right_spc) 
+        left_data = sanit(e_serie[left_spc])  
+        print(left_data)
+        right_data = [e_spc[s] for s in right_spc]   
+        eq_data = sub_eq(left_data, right_data, labels=labels, unit='kcal', scale=-1.0)
+        eq_data['x'] = left_data['x']
+        print(eq_data)  
+        plot(eq_data)
+        eq_energy[eq] = eq_data
+
+    return eq_energy
+
+def sanit(data):
+    data['x'] = np.array(data['x'])
+    x = data['x']
+    for item in data:
+        if item == 'name' or item == 'tag':
+            continue
+        data[item] = data[item][x>0.0]
+    return data
+
 
 def parse_eq(eq):
     spc = eq.split('+')
     return spc
 
-def sub_eq(left, right, labels=['suhf'], unit='au'):
+def sub_eq(left, right, labels=['suhf'], unit='au', scale=1.0):
     '''
     left: dict
     right: list of dict
     '''
     #print(left)
     eq_data = {}
-    scal = to_unit(unit)
+    scal = to_unit(unit)*scale
     for label in labels:
         left_e = left[label]
         right_es = [r[label] for r in right]
@@ -191,5 +238,31 @@ def get_mad(eq_deviation, labels):
         maxd[label] = mx
     return mad, maxd
 
+def plot(eq_data):
+    import matplotlib.pyplot as plt
+    plt.rc('font', size=12)
+    plt_lines = []
+    labels = []
+    #print(ys)
+    x = eq_data['x']
+    for label in eq_data:
+        if label != 'x':
+            l, = plt.plot(x, eq_data[label])
+            plt_lines.append(l)
+            labels.append(label)
+    plt.xlabel('R / $\AA$')
+    plt.ylabel('E / kcal/mol')
+    plt.ylim(None, 1.0)
+    plt.legend(handles = plt_lines, labels = labels)
+    #if show:
+    #    plt.show()
+    #print("save figure to %s.png" % datafile)
+    plt.savefig('test.png')
+
+
+
 if __name__ == '__main__':
-    get_eq_energy(sys.argv[1], sys.argv[2], sys.argv[3])
+    if sys.argv[3] == 'curve':
+        get_curve_eq(sys.argv[1], sys.argv[2])
+    else:
+        get_eq_energy(sys.argv[1], sys.argv[2], sys.argv[3])

@@ -49,7 +49,7 @@ if __name__ == '__main__':
     args=parser.parse_args()
     
     mode = args.mode
-    h, k = get_param(args.fun) #float(sys.argv[2])
+    h, k = get_param(args.fun)[:2] #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task
     rscale = args.rscale #float(sys.argv[4])
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         su = suData(data, mode)
         if save:
             raw_ys.append(su.res())
-        print('%.1f  %6.6f %6.6f %6.6f %6.6f %6.6f'%(float(r), su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
+        print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))
         if r[0].isdigit():
             x.append(float(r)/rscale)
         else:

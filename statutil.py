@@ -63,24 +63,29 @@ class suData():
             if isinstance(label, str):
                 h, k, t = FUN_param[label]
                 #t = 0.0
-            elif isinstance(label, tuple):
-                if len(label) == 3:
-                    h, k = label[1], label[2]
-                    t = 0.0
-                elif len(label) == 4:
-                    h, k, t = label[1], label[2], label[3]
-                elif len(label) == 5:
-                    h, k, t, (potk, potc) = label[1:]
-                    #potk, potc = label[4]
-                    elabels[label] = self.supd_p3(h, potk, potc)
-                    continue
-
-            if 'ent' in label:
-                elabels[label] = self.only_ent(h, t)
-            elif t > 0.0:
-                elabels[label] = self.supd_t(h, t)
-            else:
                 elabels[label] = self.supd_k(h, k)
+                if 'ent' in label:
+                    elabels[label] = self.only_ent(h, t)
+            elif isinstance(label, tuple):
+                if isinstance(label[1], float):
+                    if len(label) == 3:
+                        h, k = label[1], label[2]
+                        t = 0.0
+                        elabels[label] = self.supd_k(h, k)
+                    elif len(label) == 4:
+                        h, k, t = label[1], label[2], label[3]
+                        elabels[label] = self.supd_t(h, t)
+                    elif len(label) == 5:
+                        h, k, t, (potk, potc) = label[1:]
+                        #potk, potc = label[4]
+                        elabels[label] = self.supd_p3(h, potk, potc)
+                        #continue
+                else:
+                    if label[1] == 'p3':
+                        h, potk, potc = label[2:]
+                        elabels[label] = self.supd_p3(h, potk, potc)
+
+            
         return elabels
     
     def ent(self):
