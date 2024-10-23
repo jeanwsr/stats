@@ -4,12 +4,14 @@ import sys
 
 def spline_findmin(x, y):
     f = spl(x, y, k=3)
-    deriv = f.derivative()
-    res = root(deriv, x[2])
-    yroot = f(res.x)
-    return f, (res.x, yroot)
+    xroot, yroot = findmin(f, x)
+    return f, (xroot, yroot)
 
 
 def spline(x, y):
     f = spl(x, y, k=3)
     return f
+
+def findmin(f, x):
+    res = root(f.derivative(), x[2])
+    return res.x, f(res.x)

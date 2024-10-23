@@ -4,6 +4,8 @@ Parse SUPDFT output;
 Interpolate dissociation curve
 
 stats -t 'task*' -f PBE -m 'pddd'
+
+save to shelf: --save ../shelf:v2      
 """
 
 import argparse

@@ -2,6 +2,7 @@
 import shelve
 import db
 import argparse
+from fit import get_elabel
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -9,6 +10,8 @@ def argument_parse():
     parser.add_argument("input",type=str,#default='dump',
                         help='')
     parser.add_argument("-s","--summary", action='store_true',
+                        required=False,)
+    parser.add_argument("-e","--energy", action='store_true',
                         required=False,)
     parser.add_argument("-n","--name",dest='name',metavar='name',type=str,
                         required=False,)
@@ -33,3 +36,5 @@ if __name__ == '__main__':
                 db.dump_spc(f[serie], short)
             else:
                 db.dump(f[serie], short)
+        if args.energy:
+            get_elabel(args.input)

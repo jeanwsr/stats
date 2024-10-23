@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-"""
+help0="""
 stats_spc.py -t 'task*' -f PBE02 [-l ref] [--save ../shelf]
-
+"""
+helpl="""
 -l ref for reference minimum, e.g. sio_151.3.out
 -l none (default) for out without x, e.g. sio_si.out
 """
@@ -14,7 +15,7 @@ import db
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                               description='')
+                               description=help0)
     parser.add_argument("-p","--parse",dest='type',metavar='type',type=str,default='dump',
                         required=False, #choices=['dh','scf'],
                         help='')
@@ -29,7 +30,7 @@ def argument_parse():
                         default='supddd',
                         required=False,)
     parser.add_argument("-l","--label",dest='label',metavar='label',type=str,
-                        default="none")
+                        default="none", help=helpl)
     parser.add_argument("-s","--rscale",dest='rscale',metavar='rscale',type=int,
                         default=100,
                         required=False,)
@@ -69,6 +70,7 @@ if __name__ == '__main__':
     for s in filelist:
         #r = s.replace(task, '').replace('.out', '')
         name0, name1 = s.split('.out')[0].split('_')
+        suf = s.split('.out')[1]
         if label == 'none':
             spc = name1 # sio_si.out -> si
             x = None
@@ -76,6 +78,9 @@ if __name__ == '__main__':
             # sio_151.3.out -> sio, 151.3
             spc = name0
             x = float(name1)/rscale
+        elif label == 'suf':
+            spc = name0
+            x = None
         else:
             raise ValueError('invalid label')
         
@@ -111,5 +116,9 @@ if __name__ == '__main__':
             ys = np.array(raw_ys)
             #print(ys, su.series())
             molname = spc
-            db.save_spc(ys, su.series(), shelfname, molname, tag=label, x=x)
+            if label == 'suf':
+                tag = suf
+            else:
+                tag = label
+            db.save_spc(ys, su.series(), shelfname, molname, tag=tag, x=x)
     

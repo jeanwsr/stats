@@ -5,7 +5,7 @@ import numpy as np
 from statutil import suData, get_param, runcmd, to_unit   
 import db
 import shelve
-from interp import spline
+from interp import spline, findmin
 
 def argument_parse():
     parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -47,7 +47,7 @@ def to_index(x, start, end):
         e_index = None
     return s_index, e_index
 
-def interp(shelf, param):
+def interp(f, param):
     items = f.keys()
     for item in items:
         if 'serie' in item:
@@ -71,10 +71,14 @@ def interp(shelf, param):
                     y = serie[k]
                     y_noatom = [yi for xi, yi in zip(x, y) if xi > 0.0]
                     y_main = y_noatom[index[0]:index[1]]
-                    print(x_main, y_main)
+                    if not isinstance(y_main[0], float):
+                        continue
+                    #print(x_main, y_main)
                     yfunc = spline(x_main, y_main)
                     k_refmin = yfunc(refmin)
                     print(k, k_refmin)
+                    #xmin, ymin = findmin(yfunc, x_main)
+                    #print(xmin, ymin)
             #db.save_spc(ys, su.series(), shelfname, molname)
 
 def load_param(paramfile):
