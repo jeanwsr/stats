@@ -96,11 +96,12 @@ class suDataDB(suData):
         self.__dict__.update(datadict)
 
 def runcmd(cmd):
-    p = subprocess.Popen(cmd, 
+    out, err = subprocess.Popen(cmd, 
          shell=True,
          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-         encoding='utf-8').communicate()[0]
-    return p
+         encoding='utf-8').communicate()
+    #print(cmd, out, err)
+    return out
 
 FUN_param = {
     'suhf': [1.0, 1.0, 0.0],
@@ -138,3 +139,22 @@ def entropy_term(n, thr=1e-6):
 
 def get_ent(natocc):
     return sum([entropy_term(n) for n in natocc])
+
+def split_method(taskfile):
+    # split file into pieces by 'method:'
+    linenumber = runcmd("grep 'method SU' %s -n | awk -F: '{print $1}'"%taskfile)
+    linenumber = linenumber.split('\n')[:-1]
+    #print(linenumber)
+    pieces = []
+    for i, n in enumerate(linenumber):
+        start = int(n)-1
+        start = str(start)
+        if i == len(linenumber) - 1:
+            end = '$'
+        else:
+            end = int(linenumber[i+1])-2
+        end = str(end)
+        piece = runcmd("sed -n '%s,%sp' %s > %s"%(start, end, taskfile, taskfile+start))
+        pieces.append(taskfile+start)
+    return pieces
+

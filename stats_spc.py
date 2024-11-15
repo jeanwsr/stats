@@ -36,6 +36,8 @@ def argument_parse():
                         required=False,)
     parser.add_argument("--save", type=str, dest='save', metavar='save',
                         default = '', required=False, help='')
+    parser.add_argument("-vv","--debug", action='store_true',
+                        required=False,)
     return parser
 
 parser = argument_parse()
@@ -69,7 +71,8 @@ if __name__ == '__main__':
     #raw_ys = []
     for s in filelist:
         #r = s.replace(task, '').replace('.out', '')
-        name0, name1 = s.split('.out')[0].split('_')
+        name_chunk = s.split('.out')[0].split('_')
+        name0, name1 = '_'.join(name_chunk[0:-1]), name_chunk[-1]
         suf = s.split('.out')[1]
         if label == 'none':
             spc = name1 # sio_si.out -> si
@@ -77,13 +80,15 @@ if __name__ == '__main__':
         elif label == 'ref':
             # sio_151.3.out -> sio, 151.3
             spc = name0
+            x_str = name1
             x = float(name1)/rscale
         elif label == 'suf':
             spc = name0
             x = None
         else:
             raise ValueError('invalid label')
-        
+        if args.debug:
+            print(f'name: spc = {spc}, x = {x}')
         #spc = to_(spc)
         #print(s, r)
         runcmd("cp %s tmp" % s)
@@ -118,7 +123,10 @@ if __name__ == '__main__':
             molname = spc
             if label == 'suf':
                 tag = suf
+            elif label == 'ref':
+                tag = 'ref'+x_str
             else:
                 tag = label
+            print(f'save: molname = {molname}, tag = {tag}')
             db.save_spc(ys, su.series(), shelfname, molname, tag=tag, x=x)
     

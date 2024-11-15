@@ -123,8 +123,12 @@ def get_elabel(shelf, mode='label', labels=LABELS, name='full'):
     dump_dev(e_data, None, mode)
 
 def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
-    
-    equations = toml_load(toml, 'spc')
+    if ':' in toml:
+        toml, dset = toml.split(':')
+    else:
+        dset = 'spc'
+    equations = toml_load(toml, dset)
+    #equations = toml_load(toml, 'spc')
     print(equations)
     ref = toml_load(toml, 'ref')
     print(ref)
@@ -142,11 +146,14 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
             #print(serie)
             data = f[serie]
             n = data['name']
-            if name == 'full' and '.' in data['tag']:
-                n = data['name']+data['tag']
+            if name == 'full':
+                if '.' in data['tag']:
+                    n = data['name']+data['tag']
+                else:
+                    n = spc2name(serie, data)
             #print(data)
             e_data[n] = data
-    print(e_data.keys())
+    print('e_data', e_data.keys())
     #print(e_data)
     if mode == 'label':
         pass
@@ -164,6 +171,8 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
         left_spc = eq
         right_spc = parse_eq(equations[eq])
         print(left_spc, right_spc)
+        #has_eq, eq_in_shelf = has_eq_fuzzy(e_data.keys(), eq)
+        #exit()
         if eq in e_data:
             matches = [eq]
         else:
@@ -173,14 +182,25 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
             print(m)
             left_data = e_data[m]
             right_data = [e_data[s] for s in right_spc]
+            #right_data = []
+            #for s in right_spc:
+            #    has_s, s_in_shelf = has_eq_fuzzy(e_data.keys(), s)
+            #    right_data.append(e_data[s_in_shelf])
+            print(left_data)
+            print(right_data)
             eq_data = sub_eq(left_data, right_data, labels=labels, unit='kcal')
             #print(eq_data)
             eq_energy[m] = eq_data
     if ref is None:
         print(eq_energy)
         return eq_energy
-    print(eq_energy)
+    #print(eq_energy)
+    for eq in eq_energy:
+        print(eq)
+        dump_dev(eq_energy[eq], params, mode)
     eq_deviation = sub_ref(eq_energy, ref, mode)
+    if len(eq_deviation) == 0:
+        return eq_energy
     #print(eq_deviation)
     for eq in eq_deviation:
         print(eq)
@@ -192,8 +212,31 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
     dump_dev(maxd, params, mode)
     return eq_energy
 
+def has_eq_fuzzy(items, eq):
+    if '(' in eq:
+        t = eq.split('(')[1].split(')')[0]
+        eq = eq.split('(')[0] + '.ref' + t
+    #print(eq)
+    for item in items:
+        if eq in item:
+            return True, item
+    print('search', eq, item)
+    return False, None
+
+def spc2name(spc, fspc):
+    if 'ref' in spc:
+        t = spc.split('ref')[1]
+        name = fspc['name'].lower() + '(%s)'%t
+    else:
+        name = fspc['name'].lower()
+    return name
+
 def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_c, unit='kcal', verbose=3):
-    equations = toml_load(toml, 'spc')
+    if ':' in toml:
+        toml, dset = toml.split(':')
+    else:
+        dset = 'spc'
+    equations = toml_load(toml, dset)
     print(equations)
     #equations = {'n2': 'n+n'}
     e_serie = {}
@@ -201,16 +244,22 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_c, unit='kcal', verbos
     with shelve.open(shelf) as f:
         items = f.keys()
         for eq in equations:
-            if 'serie_'+eq+'.none' not in items:
+            has_eq, eq_in_shelf = has_eq_fuzzy(items, eq)
+            if not has_eq:
                 continue
-            e_serie[eq] = f['serie_'+eq+'.none']
-        for serie in items:
-            if 'spc' not in serie or 'ref' in serie:
+            e_serie[eq] = f[eq_in_shelf]
+        for spc in items:
+            if 'spc' not in spc:
                 continue
-            name = f[serie]['name']
-            e_spc[name] = f[serie]
+            else:
+                fspc = f[spc]
+                name = spc2name(spc, fspc)
+                e_spc[name] = f[spc]
         #print(e_serie)
         #print(e_spc)
+    if verbose > 3:
+        print(e_serie.keys())
+        print(e_spc.keys())
     e_serie = update_elabel(e_serie, labels=labels)
     #print(e_serie)
     if len(e_spc) == 0:
@@ -290,6 +339,8 @@ def sub_ref(eq_e, ref, mode):
     eq_deviation = {}
     for eq in eq_e:
         e = eq_e[eq]
+        if eq not in ref:
+            continue
         ref_e = ref[eq]
         eq_dev = {}
         for label in e:

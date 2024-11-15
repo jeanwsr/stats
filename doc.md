@@ -19,3 +19,7 @@ calculate a few curves, and fit the minimumm
 ```
 fit.py shelf -t spc.toml -m curve -u ev
 ```
+calculate a few equations
+```
+fit.py shelf -t spc.toml -m label
+```

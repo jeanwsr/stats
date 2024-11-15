@@ -10,7 +10,7 @@ save to shelf: --save ../shelf:v2
 
 import argparse
 import numpy as np
-from statutil import suData, get_param, runcmd, to_unit   
+from statutil import suData, get_param, runcmd, to_unit, split_method   
 import db
 
 def argument_parse():
@@ -42,6 +42,8 @@ def argument_parse():
     parser.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
     parser.add_argument("--save", type=str, dest='save', metavar='save',
                         default = '', required=False, help='')
+    parser.add_argument("-vv","--debug", action='store_true',
+                        required=False,)
     return parser
 
 parser = argument_parse()
@@ -89,9 +91,18 @@ if __name__ == '__main__':
         #print(s, r)
         runcmd("cp %s tmp" % s)
         runcmd("sed -i 's/://' tmp")
-        p = runcmd("grep ^E_ tmp | awk '{print $2}'")
+        pieces = split_method('tmp')
+        if len(pieces) == 1:
+            tmppiece = pieces[0]
+        elif len(pieces) >= 2:
+            runcmd("cat %s %s > tmp0_1"%(pieces[0], pieces[1]))
+            tmppiece = 'tmp0_1'
+        
+        #exit()
+        p = runcmd("grep ^E_ %s | awk '{print $2}'"%tmppiece)
         data = p.split('\n')
-        #print(data)
+        if args.debug:
+            print('data', data)
         su = suData(data, mode)
         if save:
             raw_ys.append(su.res())
