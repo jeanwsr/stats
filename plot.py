@@ -81,6 +81,7 @@ def interp(x, y, label='', scal=1.0):
 def interp_all(x, ys, labels=[], point=None, scal=1.0):
     funcs = []
     minpoints = []
+    print('x', x)
     for i in range(ys.shape[1]):
         if len(labels[i]) > 0:
             func, minpoint = interp(x, ys[:,i], label=labels[i], scal=scal)
@@ -95,33 +96,36 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
                 print('%20s point: %.6f  y(point): %.6f' %(labels[i], point, funcs[i](point)*scal))
     return funcs, minpoints
 
-def plot(x, func, minpoint, label=''):
+def plot(ax, x, func, minpoint, label='', scale=1.0):
     #print(x, y)
     samp = np.linspace(x[0], x[-1], 100)
     #func, point = interp(x, y)
-    y_samp = func(samp)
+    y_samp = func(samp)*scale
     #print(samp)
-    l, = plt.plot(samp, y_samp )
-    plt.plot([minpoint[0]], [minpoint[1]], 'ro', markersize=3)
+    l, = ax.plot(samp, y_samp )
+    #print(minpoint)
+    ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
     return l
 
 
-def plot_all(x, funcs, minpoints, labels, loc, show, datafile):
+def plot_all(x, funcs, minpoints, labels, loc='lower right', 
+             show=False, datafile='test', scale=1.0, unit='a.u.'):
     plt.rc('font', size=12)
     plt_lines = []
     #print(ys)
-    for i in range(ys.shape[1]):
+    fig, ax = plt.subplots()
+    for i in range(len(funcs)):
         if len(labels[i]) > 0:
-            l = plot(x, funcs[i], minpoints[i], label=labels[i])
+            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale)
             plt_lines.append(l)
-    plt.xlabel('R / $\AA$')
-    plt.ylabel('E / a.u.')
-    plt.ylim(None, 1.0)
-    plt.legend(handles = plt_lines, labels = labels, loc=loc)
+    ax.set_xlabel('R / $\AA$')
+    ax.set_ylabel('E / %s' % unit)
+    ax.set_ylim(None, 1.0)
+    ax.legend(handles = plt_lines, labels = labels, loc=loc)
     if show:
         plt.show()
     print("save figure to %s.png" % datafile)
-    plt.savefig(datafile+'.png')
+    fig.savefig(datafile+'.png')
     
 def scal_factor(dataunit, target_unit):
     if dataunit == target_unit:

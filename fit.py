@@ -6,7 +6,8 @@ import tomli
 import shelve
 import sys
 from statutil import suDataDB, to_unit
-from plot import interp_all
+import matplotlib.pyplot as plt
+from plot import interp_all, plot_all
 import numpy as np
 import argparse
 
@@ -28,7 +29,7 @@ def fit_parse():
     #p.add_argument("-p","--point", type=float, dest='point', metavar='point', default=None,
     #                    required=False, 
     #                    help='')
-    p.add_argument("-n","--noplot", action="store_true", required=False, help='')
+    p.add_argument("-p","--plot", action="store_true", required=False, help='')
 #    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', 
                    default='kcal')
@@ -45,6 +46,9 @@ LABELS_c = ['suhf', 'pbe', 'pbe0', 'pbe02',
             ('pbe', 'p3', 0.35, 0.0, 0.55),
             ('pbe', 'p3', 0.40, 0.0, 0.65)]
 LABELS = LABELS_c
+
+LABELS_p = ['suhf', 'pbe', 'pbe02', ('pbe', 'p3', 0.25, 0.0, 0.40)]
+LABELS_display = ['SUHF', 'SUPD-tPBE', 'SUPD-tPBE($\lambda,k$)', 'SUPD-tPBE($\lambda,c$)']
 
 class FitParam:
     def __init__(self):
@@ -197,7 +201,7 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
     #print(eq_energy)
     for eq in eq_energy:
         print(eq)
-        dump_dev(eq_energy[eq], params, mode)
+        #dump_dev(eq_energy[eq], params, mode)
     eq_deviation = sub_ref(eq_energy, ref, mode)
     if len(eq_deviation) == 0:
         return eq_energy
@@ -224,14 +228,15 @@ def has_eq_fuzzy(items, eq):
     return False, None
 
 def spc2name(spc, fspc):
+    name = fspc['name'].lower()
     if 'ref' in spc:
         t = spc.split('ref')[1]
-        name = fspc['name'].lower() + '(%s)'%t
-    else:
-        name = fspc['name'].lower()
+        if len(t) > 0:
+            name = name + '(%s)'%t
+    
     return name
 
-def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_c, unit='kcal', verbose=3):
+def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', plot=False, verbose=3):
     if ':' in toml:
         toml, dset = toml.split(':')
     else:
@@ -279,8 +284,10 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_c, unit='kcal', verbos
         if verbose > 3:
             print('eq_data', eq_data)
         #interp
-        interp_all_wrap(eq_data)
-        #plot(eq_data)
+        funcs, mins = interp_all_wrap(eq_data)
+        #plot_eq(eq_data)
+        print(mins)
+        plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=-1.0, unit=unit)
         eq_energy[eq] = eq_data
 
     return eq_energy
@@ -289,7 +296,7 @@ def interp_all_wrap(eq_data):
     labels = []
     ys0 = []
     for label in eq_data:
-        if label == 'x':
+        if label == 'x' or label == 'name' or label == 'tag':
             continue
         labels.append(label)
         y = eq_data[label]
@@ -320,6 +327,7 @@ def sub_eq(left, right, labels=['suhf'], unit='au', scale=1.0):
     '''
     #print(left)
     eq_data = {}
+    eq_data['name'] = left['name']
     scal = to_unit(unit)*scale
     for label in labels:
         left_e = left[label]
@@ -344,7 +352,8 @@ def sub_ref(eq_e, ref, mode):
         ref_e = ref[eq]
         eq_dev = {}
         for label in e:
-            eq_dev[label] = e[label] - ref_e
+            if not isinstance(e[label], str):
+                eq_dev[label] = e[label] - ref_e
         eq_deviation[eq] = eq_dev
         #print(eq)
         #dump_dev(eq_dev, mode)
@@ -401,28 +410,35 @@ def get_mad(eq_deviation, labels):
         maxd[label] = mx
     return mad, maxd
 
-def plot(eq_data):
-    import matplotlib.pyplot as plt
+def plot_eq(eq_data, scale=-1.0):
     plt.rc('font', size=12)
     plt_lines = []
     labels = []
     #print(ys)
     x = eq_data['x']
+    print('x', x)
+    fig, ax = plt.subplots()
     for label in eq_data:
-        if label != 'x':
-            l, = plt.plot(x, eq_data[label])
-            plt_lines.append(l)
-            labels.append(label)
-    plt.xlabel('R / $\AA$')
-    plt.ylabel('E / kcal/mol')
-    plt.ylim(None, 1.0)
-    plt.legend(handles = plt_lines, labels = labels)
+        if label == 'x' or label == 'name' or label == 'tag':
+            continue
+        print('plot ', label)
+        l, = ax.plot(x, eq_data[label]*scale)
+        plt_lines.append(l)
+        labels.append(label)
+    ax.set_xlabel('R / $\AA$')
+    ax.set_ylabel('E / kcal/mol')
+    ymin = (eq_data['pbe']*scale).min() - 0.5
+    ax.set_ylim(ymin, 1.0)
+    ax.legend(handles = plt_lines, labels = labels)
     #if show:
     #    plt.show()
     #print("save figure to %s.png" % datafile)
-    plt.savefig('test.png')
+    fig.savefig('%s.png'%eq_data['name'])
 
 
+def interp_plot(ax, x, y, label):
+    l, = ax.plot(x, y, label=label)
+    return l
 
 if __name__ == '__main__':
     args = p.parse_args()
@@ -431,7 +447,7 @@ if __name__ == '__main__':
     toml = args.toml
     verbose = args.verbose
     if mode == 'curve':
-        get_curve_eq(shelf, toml, mode, unit=args.unit, verbose=verbose)
+        get_curve_eq(shelf, toml, mode, unit=args.unit, plot=args.plot, verbose=verbose)
     elif mode == 'none':
         get_elabel(shelf)
     else:
