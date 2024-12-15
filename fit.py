@@ -33,6 +33,7 @@ def fit_parse():
 #    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', 
                    default='kcal')
+    p.add_argument("--xunit", type=str, dest='xunit', metavar='xunit', default='angs')
     p.add_argument("-v","--verbose", type=int, dest='verbose', metavar='verbose',
                    default=3)
     return p
@@ -48,7 +49,7 @@ LABELS_c = ['suhf', 'pbe', 'pbe0', 'pbe02',
 LABELS = LABELS_c
 
 LABELS_p = ['suhf', 'pbe', 'pbe02', ('pbe', 'p3', 0.25, 0.0, 0.40)]
-LABELS_display = ['SUHF', 'SUPD-tPBE', 'SUPD-tPBE($\lambda,k$)', 'SUPD-tPBE($\lambda,c$)']
+LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
 
 class FitParam:
     def __init__(self):
@@ -236,7 +237,7 @@ def spc2name(spc, fspc):
     
     return name
 
-def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', plot=False, verbose=3):
+def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit='angs', plot=False, verbose=3):
     if ':' in toml:
         toml, dset = toml.split(':')
     else:
@@ -244,6 +245,7 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', plot=F
     equations = toml_load(toml, dset)
     print(equations)
     #equations = {'n2': 'n+n'}
+    #exit()
     e_serie = {}
     e_spc = {}
     with shelve.open(shelf) as f:
@@ -268,26 +270,39 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', plot=F
     e_serie = update_elabel(e_serie, labels=labels)
     #print(e_serie)
     if len(e_spc) == 0:
-        return e_serie
-    e_spc = update_elabel(e_spc, labels=labels)
+        if 'min' in equations.values():
+            submin = True
+        else:
+            return e_serie
+    if len(e_spc) > 0:
+        e_spc = update_elabel(e_spc, labels=labels)
     eq_energy = {}
     for eq in e_serie:
         left_spc = eq
-        right_spc = parse_eq(equations[eq])
-        print(left_spc, right_spc) 
-        left_data = sanit(e_serie[left_spc])  
-        #print(left_data)
-        right_data = [e_spc[s] for s in right_spc]   
-        eq_data = sub_eq(left_data, right_data, labels=labels, unit=unit#, scale=-1.0
+        left_data = e_serie[left_spc]
+        if not submin:
+            left_data = sanit(left_data)
+            right_spc = parse_eq(equations[eq])
+            print(left_spc, right_spc) 
+            #print(left_data)
+            right_data = [e_spc[s] for s in right_spc]   
+            eq_data = sub_eq(left_data, right_data, labels=labels, unit=unit#, scale=-1.0
                          )
+        else:
+            eq_data = sub_min(left_data, labels=labels, unit=unit)
         eq_data['x'] = left_data['x']
         if verbose > 3:
             print('eq_data', eq_data)
         #interp
         funcs, mins = interp_all_wrap(eq_data)
         #plot_eq(eq_data)
-        print(mins)
-        plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=-1.0, unit=unit)
+        if not submin:
+            print(mins)
+            plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=-1.0, unit=unit,
+                     ylim=(None, 1.0))
+        else:
+            plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=1.0, unit=unit,
+                     xunit=xunit, ylim=(0.0, None), plotmin=False)
         eq_energy[eq] = eq_data
 
     return eq_energy
@@ -319,6 +334,17 @@ def sanit(data):
 def parse_eq(eq):
     spc = eq.split('+')
     return spc
+
+def sub_min(data, labels=['suhf'], unit='au'):
+    eq_data = {}
+    eq_data['name'] = data['name']
+    scal = to_unit(unit)
+    imin = data['suhf'].argmin()
+    for label in labels:
+        left_e = data[label]
+        eq_e = left_e - left_e[imin]
+        eq_data[label] = eq_e*scal
+    return eq_data
 
 def sub_eq(left, right, labels=['suhf'], unit='au', scale=1.0):
     '''
@@ -447,7 +473,7 @@ if __name__ == '__main__':
     toml = args.toml
     verbose = args.verbose
     if mode == 'curve':
-        get_curve_eq(shelf, toml, mode, unit=args.unit, plot=args.plot, verbose=verbose)
+        get_curve_eq(shelf, toml, mode, unit=args.unit, xunit=args.xunit, plot=args.plot, verbose=verbose)
     elif mode == 'none':
         get_elabel(shelf)
     else:

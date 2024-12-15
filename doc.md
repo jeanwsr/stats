@@ -3,8 +3,10 @@
 ## save
 save data of a few points
 ```
-stats.py -t 'xxx' -f PBE02 -m pddd --save ./shelf 
+stats.py -t 'xxx' -f PBE02 -m pddd --save ./shelf [--unit kcal] [--rscale 100] 
 ```
+with `--xunit deg`, the rscale is not applied.
+
 save data of one point (ref minimum)
 ```
 stats_spc.py -t 'xxx' -f PBE02 -m pddd -l ref --save ./shelf
@@ -26,4 +28,9 @@ fit.py shelf -t spc.toml:dataset -m label
 draw curves of them
 ```
 fit.py shelf -t spc.toml:dataset -m curve -p [ -u eV ]
+```
+
+For c2h4 (use submin)
+```
+fit.py c2h4 -t c2h4.toml -m curve -v 4 -p --xunit deg
 ```

@@ -96,7 +96,7 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
                 print('%20s point: %.6f  y(point): %.6f' %(labels[i], point, funcs[i](point)*scal))
     return funcs, minpoints
 
-def plot(ax, x, func, minpoint, label='', scale=1.0):
+def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
     #print(x, y)
     samp = np.linspace(x[0], x[-1], 100)
     #func, point = interp(x, y)
@@ -104,23 +104,37 @@ def plot(ax, x, func, minpoint, label='', scale=1.0):
     #print(samp)
     l, = ax.plot(samp, y_samp )
     #print(minpoint)
-    ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
+    if plotmin:
+        ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
     return l
 
 
 def plot_all(x, funcs, minpoints, labels, loc='lower right', 
-             show=False, datafile='test', scale=1.0, unit='a.u.'):
+             show=False, datafile='test', scale=1.0, unit='a.u.',
+             xunit='angs', ylim=(None,None), plotmin=True):
     plt.rc('font', size=12)
     plt_lines = []
     #print(ys)
     fig, ax = plt.subplots()
     for i in range(len(funcs)):
         if len(labels[i]) > 0:
-            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale)
+            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale, plotmin=plotmin)
             plt_lines.append(l)
-    ax.set_xlabel('R / $\AA$')
-    ax.set_ylabel('E / %s' % unit)
-    ax.set_ylim(None, 1.0)
+    xunit_display = xunit
+    if xunit == 'angs':
+        xunit_display = '$\AA$'
+        ax.set_xlabel('R / %s' % xunit_display)
+    elif xunit == 'deg':
+        #xunit_display = '$^\circ$'
+        ax.set_xlabel('angle / degree')
+    else:
+        xunit_display = xunit
+        ax.set_xlabel('R / %s' % xunit_display)
+    unit_display = unit
+    if unit == 'kcal':
+        unit_display = 'kcal/mol'
+    ax.set_ylabel('E / %s' % unit_display)
+    ax.set_ylim(ylim[0], ylim[1])
     ax.legend(handles = plt_lines, labels = labels, loc=loc)
     if show:
         plt.show()

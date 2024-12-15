@@ -40,6 +40,7 @@ def argument_parse():
                         default='-1000,1000',
                         required=False,)
     parser.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
+    parser.add_argument("--xunit", type=str, dest='xunit', metavar='xunit', default='angs')
     parser.add_argument("--save", type=str, dest='save', metavar='save',
                         default = '', required=False, help='')
     parser.add_argument("-vv","--debug", action='store_true',
@@ -56,7 +57,10 @@ if __name__ == '__main__':
     h, k = get_param(args.fun)[:2] #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task
-    rscale = args.rscale #float(sys.argv[4])
+    if args.xunit == 'deg':
+        rscale = 1.0
+    else:
+        rscale = args.rscale #float(sys.argv[4])
     sub = bool(args.sub) #bool(sys.argv[5])
     save = len(args.save) > 0
     if save:
