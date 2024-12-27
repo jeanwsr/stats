@@ -16,6 +16,11 @@ viso 0.02 -0.02
 display resize 600 600
 display resetview
 ```
+### other manipulation
+```
+rotate y by 90
+```
+
 
 ## convert figures
 ```
