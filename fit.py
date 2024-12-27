@@ -29,6 +29,7 @@ def fit_parse():
     #p.add_argument("-p","--point", type=float, dest='point', metavar='point', default=None,
     #                    required=False, 
     #                    help='')
+    p.add_argument("-l","--labelset", type=int, dest='labelset', metavar='labelset', default=0)
     p.add_argument("-p","--plot", action="store_true", required=False, help='')
 #    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', 
@@ -50,6 +51,11 @@ LABELS = LABELS_c
 
 LABELS_p = ['suhf', 'pbe', 'pbe02', ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
+
+LABELS_p1 = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
+LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
+
+labelset = [[LABELS_p, LABELS_display], [LABELS_p1, LABELS_display1]]
 
 class FitParam:
     def __init__(self):
@@ -237,7 +243,7 @@ def spc2name(spc, fspc):
     
     return name
 
-def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit='angs', plot=False, verbose=3):
+def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='angs', plot=False, verbose=3):
     if ':' in toml:
         toml, dset = toml.split(':')
     else:
@@ -246,6 +252,7 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit=
     print(equations)
     #equations = {'n2': 'n+n'}
     #exit()
+    labels, labels_display = labelset[ilabelset]
     e_serie = {}
     e_spc = {}
     with shelve.open(shelf) as f:
@@ -269,6 +276,7 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit=
         print(e_spc.keys())
     e_serie = update_elabel(e_serie, labels=labels)
     #print(e_serie)
+    submin = False
     if len(e_spc) == 0:
         if 'min' in equations.values():
             submin = True
@@ -277,6 +285,7 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit=
     if len(e_spc) > 0:
         e_spc = update_elabel(e_spc, labels=labels)
     eq_energy = {}
+    print('unit: ', unit)
     for eq in e_serie:
         left_spc = eq
         left_data = e_serie[left_spc]
@@ -296,13 +305,14 @@ def get_curve_eq(shelf, toml, mode='curve', labels=LABELS_p, unit='kcal', xunit=
         #interp
         funcs, mins = interp_all_wrap(eq_data)
         #plot_eq(eq_data)
-        if not submin:
-            print(mins)
-            plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=-1.0, unit=unit,
-                     ylim=(None, 1.0))
-        else:
-            plot_all(eq_data['x'], funcs, mins, labels=LABELS_display, datafile=eq, scale=1.0, unit=unit,
-                     xunit=xunit, ylim=(0.0, None), plotmin=False)
+        if plot:
+            if not submin:
+                print(mins)
+                plot_all(eq_data['x'], funcs, mins, labels=labels_display, datafile=eq, scale=-1.0, unit=unit,
+                         ylim=(None, 1.0))
+            else:
+                plot_all(eq_data['x'], funcs, mins, labels=labels_display, datafile=eq, scale=1.0, unit=unit,
+                         xunit=xunit, ylim=(0.0, None), plotmin=False)
         eq_energy[eq] = eq_data
 
     return eq_energy
@@ -473,7 +483,8 @@ if __name__ == '__main__':
     toml = args.toml
     verbose = args.verbose
     if mode == 'curve':
-        get_curve_eq(shelf, toml, mode, unit=args.unit, xunit=args.xunit, plot=args.plot, verbose=verbose)
+        get_curve_eq(shelf, toml, mode, ilabelset=args.labelset, 
+                     unit=args.unit, xunit=args.xunit, plot=args.plot, verbose=verbose)
     elif mode == 'none':
         get_elabel(shelf)
     else:
