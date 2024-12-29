@@ -1,3 +1,4 @@
+#!/bin/bash
 suf=$1
 xscale=$2
 yscale=$3

@@ -25,7 +25,7 @@ rotate y by 90
 ## convert figures
 ```
 bmp2png.sh prefix xscale yscale
-magick montage prefix*c.png big.png
+magick montage prefix*c.png -geometry +0+0 big.png
 ```
 options for montage
 ```
