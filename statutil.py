@@ -45,7 +45,14 @@ class suData():
         return self.suhf + (self.otx - self.k - self.c)*(1.0-hyb) + (1.0-hyb**k)*self.otc
     
     def supd_t(self, hyb, t):
+        # Feng's formula
         return self.suhf + (self.otx - self.k - self.c)*(1.0-hyb) + 1.0*self.otc - hyb*t*self.ent
+    
+    def supd_ct(self, hyb, c, t):
+        '''
+        h*(k+c) + (1 - h)*otk + (1 + c)*otc - h*t*ent
+        '''
+        return self.suhf + (self.otx - self.k - self.c)*(1.0-hyb) + (1.0 + c)*self.otc - hyb*t*self.ent
     
     def only_ent(self, hyb, t):
         e = - hyb*t*self.ent
@@ -72,18 +79,25 @@ class suData():
                         h, k = label[1], label[2]
                         t = 0.0
                         elabels[label] = self.supd_k(h, k)
-                    elif len(label) == 4:
-                        h, k, t = label[1], label[2], label[3]
-                        elabels[label] = self.supd_t(h, t)
-                    elif len(label) == 5:
-                        h, k, t, (potk, potc) = label[1:]
-                        #potk, potc = label[4]
-                        elabels[label] = self.supd_p3(h, potk, potc)
-                        #continue
+                    #elif len(label) == 4:
+                    #    h, k, t = label[1], label[2], label[3]
+                    #    elabels[label] = self.supd_t(h, t)
+                    #elif len(label) == 5:
+                    #    h, k, t, (potk, potc) = label[1:]
+                    #    #potk, potc = label[4]
+                    #    elabels[label] = self.supd_p3(h, potk, potc)
+                    #    #continue
+                    else:
+                        raise ValueError("label not recognized")
                 else:
                     if label[1] == 'p3':
                         h, potk, potc = label[2:]
                         elabels[label] = self.supd_p3(h, potk, potc)
+                    elif label[1] == 't':
+                        h, c, t = label[2:]
+                        elabels[label] = self.supd_ct(h, c, t)
+                    else:
+                        raise ValueError("label not recognized")
 
             
         return elabels

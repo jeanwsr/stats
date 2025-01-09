@@ -55,7 +55,34 @@ LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c
 LABELS_p1 = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
 
-labelset = [[LABELS_p, LABELS_display], [LABELS_p1, LABELS_display1]]
+LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40), 
+            ('pbe', 't', 0.25, 0.0, 0.0),
+            ('pbe', 't', 0.25, 0.0, -0.025), 
+            # ('pbe', 't', 0.30, 0.0, -0.025),
+            # ('pbe', 't', 0.30, 0.0, -0.005),
+            # ('pbe', 't', 0.30, 0.10, -0.005),
+            # ('pbe', 't', 0.30, 0.15, -0.005),
+            # ('pbe', 't', 0.30, 0.20, -0.005),
+            # ('pbe', 't', 0.30, 0.0, -0.020),
+            # ('pbe', 't', 0.30, 0.05, -0.020),
+            # ('pbe', 't', 0.30, 0.10, -0.020),
+            # ('pbe', 't', 0.30, 0.15, -0.020),
+            ]
+for h in np.arange(0.40, 0.40+0.01, 0.05):
+    for t in np.arange(-0.005, -0.030-0.001, -0.005):
+        for c in np.arange(-0.10, 0.25+0.01, 0.05):
+            LABELS_t.append(('pbe', 't', h, c, t))
+LABELS_display_t = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)',
+                    'SU-tPBE($\lambda,t=-0.005$)', 'SU-tPBE($\lambda,t=-0.010$)']
+
+LABELS_t2 = ['suhf', 'pbe', ('pbe', 'p3', 0.25, 0.0, 0.40),
+             ('pbe', 't', 0.25, 0.0, -0.025),
+             ('pbe', 't', 0.30, 0.10, -0.010)
+             ]
+LABELS_display_t2 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,c$)', 'SU-tPBE($\lambda,t=-0.025$)', 'SU-tPBE($\lambda,t=-0.010$)']
+
+labelset = [[LABELS_p, LABELS_display], [LABELS_p1, LABELS_display1],
+            [LABELS_t, LABELS_display_t], [LABELS_t2, LABELS_display_t2]]
 
 class FitParam:
     def __init__(self):
@@ -133,7 +160,7 @@ def get_elabel(shelf, mode='label', labels=LABELS, name='full'):
     print(e_data)
     dump_dev(e_data, None, mode)
 
-def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
+def get_eq_energy(shelf, toml, mode='label', ilabelset=0, name='full'):
     if ':' in toml:
         toml, dset = toml.split(':')
     else:
@@ -147,6 +174,9 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
     if toml_param is not None:
         params = FitParam()
         params.__dict__.update(toml_load(toml, 'param'))
+
+    labels, LABELS_display = labelset[ilabelset]
+    print(labels)
     e_data = {}
     with shelve.open(shelf) as f:
         items = f.keys()
@@ -177,6 +207,7 @@ def get_eq_energy(shelf, toml, mode='label', labels=LABELS, name='full'):
     elif mode == 'scan_potc':
         labels = params.gen_labels_potc()
     e_data = update_elabel(e_data, labels=labels)
+    #print(e_data)
     eq_energy = {}
     for eq in equations:
         left_spc = eq
@@ -488,4 +519,4 @@ if __name__ == '__main__':
     elif mode == 'none':
         get_elabel(shelf)
     else:
-        get_eq_energy(shelf, toml, mode)
+        get_eq_energy(shelf, toml, mode, ilabelset=args.labelset)
