@@ -54,6 +54,7 @@ if __name__ == '__main__':
     args=parser.parse_args()
     
     mode = args.mode
+    do_ent = True
     h, k = get_param(args.fun)[:2] #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task
@@ -107,7 +108,15 @@ if __name__ == '__main__':
         data = p.split('\n')
         if args.debug:
             print('data', data)
-        su = suData(data, mode)
+        if do_ent:
+            p2a = runcmd("grep '^SUHF NO occ alpha' tmp")
+            p2b = runcmd("grep '^SUHF NO occ beta' tmp")
+            #print('p2a', p2a)
+            #print('p2b', p2b)
+            occdata = p2a.split('alpha')[1].split()[:-1], p2b.split('beta')[1].split()[:-1]
+        else:
+            occdata = None
+        su = suData(data, mode, occdata=occdata)
         if save:
             raw_ys.append(su.res())
         print('%s  %6.6f %6.6f %6.6f %6.6f %6.6f'%(r, su.sudd(0.0), su.supd(0.0), su.suhf, su.supd(h), su.supd_k(h,k)))

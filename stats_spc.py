@@ -47,7 +47,7 @@ if __name__ == '__main__':
     args=parser.parse_args()
     
     mode = args.mode
-    do_ent = False
+    do_ent = True
     h, k = get_param(args.fun)[:2] #float(sys.argv[2])
     #float(sys.argv[3])
     task = args.task

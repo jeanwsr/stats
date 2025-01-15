@@ -52,12 +52,12 @@ LABELS = LABELS_c
 LABELS_p = ['suhf', 'pbe', 'pbe02', ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
 
-LABELS_p1 = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
-LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
+LABELS_p1 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
+LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
 
 LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40), 
-            ('pbe', 't', 0.25, 0.0, 0.0),
-            ('pbe', 't', 0.25, 0.0, -0.025), 
+            ('pbe', 't', 0.15, 0.0, -0.010),
+            ('pbe', 't', 0.30, 0.0, -0.025), 
             # ('pbe', 't', 0.30, 0.0, -0.025),
             # ('pbe', 't', 0.30, 0.0, -0.005),
             # ('pbe', 't', 0.30, 0.10, -0.005),
@@ -68,12 +68,13 @@ LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0
             # ('pbe', 't', 0.30, 0.10, -0.020),
             # ('pbe', 't', 0.30, 0.15, -0.020),
             ]
-for h in np.arange(0.40, 0.40+0.01, 0.05):
-    for t in np.arange(-0.005, -0.030-0.001, -0.005):
-        for c in np.arange(-0.10, 0.25+0.01, 0.05):
-            LABELS_t.append(('pbe', 't', h, c, t))
-LABELS_display_t = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)',
-                    'SU-tPBE($\lambda,t=-0.005$)', 'SU-tPBE($\lambda,t=-0.010$)']
+# for h in np.arange(0.40, 0.40+0.01, 0.05):
+#     for t in np.arange(-0.005, -0.030-0.001, -0.005):
+#         for c in np.arange(-0.10, 0.25+0.01, 0.05):
+#             LABELS_t.append(('pbe', 't', h, c, t))
+LABELS_display_t = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)','SU-tPBE($\lambda=0.10,k$)', 'SU-tPBE($\lambda,c$)',
+                    'SU-tPBE($\lambda=0.15,\theta=-0.010$)', 
+                    'SU-tPBE($\lambda=0.30,\theta=-0.025$)']
 
 LABELS_t2 = ['suhf', 'pbe', ('pbe', 'p3', 0.25, 0.0, 0.40),
              ('pbe', 't', 0.25, 0.0, -0.025),
@@ -237,9 +238,9 @@ def get_eq_energy(shelf, toml, mode='label', ilabelset=0, name='full'):
         print(eq_energy)
         return eq_energy
     #print(eq_energy)
-    for eq in eq_energy:
-        print(eq)
-        #dump_dev(eq_energy[eq], params, mode)
+    # for eq in eq_energy:
+    #     print(eq)
+    #     #dump_dev(eq_energy[eq], params, mode)
     eq_deviation = sub_ref(eq_energy, ref, mode)
     if len(eq_deviation) == 0:
         return eq_energy
@@ -247,12 +248,32 @@ def get_eq_energy(shelf, toml, mode='label', ilabelset=0, name='full'):
     for eq in eq_deviation:
         print(eq)
         dump_dev(eq_deviation[eq], params, mode)
+    dump_table(eq_energy, 'tex')
+    dump_table(eq_deviation, 'tex')
     mad, maxd = get_mad(eq_deviation, labels)
     print('MAD')
     dump_dev(mad, params, mode)
     print('MaxD')
     dump_dev(maxd, params, mode)
     return eq_energy
+
+
+def dump_table(eq_deviation, style='plain', round=1):
+    for eq in eq_deviation:
+        for k, e in eq_deviation[eq].items():
+            if not isinstance(e, str):
+                print(k, end=' ')
+        print('')
+        break
+    for eq in eq_deviation:
+        print("%4s"%eq, end=' ')
+        for k, e in eq_deviation[eq].items():
+            if not isinstance(e, str):
+                if style == 'tex':
+                    print(f"& {e:>7.1f} ", end='')
+                else:
+                    print(f" {e:>7.1f}", end='')
+        print('')
 
 def has_eq_fuzzy(items, eq):
     if '(' in eq:
@@ -339,8 +360,9 @@ def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='ang
         if plot:
             if not submin:
                 print(mins)
+                ymax = 1.0/27*to_unit(unit)
                 plot_all(eq_data['x'], funcs, mins, labels=labels_display, datafile=eq, scale=-1.0, unit=unit,
-                         ylim=(None, 1.0))
+                         ylim=(None, ymax))
             else:
                 plot_all(eq_data['x'], funcs, mins, labels=labels_display, datafile=eq, scale=1.0, unit=unit,
                          xunit=xunit, ylim=(0.0, None), plotmin=False)
