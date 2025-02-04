@@ -31,7 +31,7 @@ def fit_parse():
     #                    help='')
     p.add_argument("-l","--labelset", type=int, dest='labelset', metavar='labelset', default=0)
     p.add_argument("-p","--plot", action="store_true", required=False, help='')
-#    p.add_argument("-s","--save", action="store_true", required=False, help='')
+    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', 
                    default='kcal')
     p.add_argument("--xunit", type=str, dest='xunit', metavar='xunit', default='angs')
@@ -54,6 +54,8 @@ LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c
 
 LABELS_p1 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
+LABELS_p4 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 0.25, 2) ('pbe', 'p3', 0.25, 0.0, 0.40)]
+LABELS_display4 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
 
 LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40), 
             ('pbe', 't', 0.15, 0.0, -0.010),
@@ -83,7 +85,8 @@ LABELS_t2 = ['suhf', 'pbe', ('pbe', 'p3', 0.25, 0.0, 0.40),
 LABELS_display_t2 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,c$)', 'SU-tPBE($\lambda,t=-0.025$)', 'SU-tPBE($\lambda,t=-0.010$)']
 
 labelset = [[LABELS_p, LABELS_display], [LABELS_p1, LABELS_display1],
-            [LABELS_t, LABELS_display_t], [LABELS_t2, LABELS_display_t2]]
+            [LABELS_t, LABELS_display_t], [LABELS_t2, LABELS_display_t2],
+            [LABELS_p4, LABELS_display4]]
 
 class FitParam:
     def __init__(self):
@@ -295,7 +298,8 @@ def spc2name(spc, fspc):
     
     return name
 
-def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='angs', plot=False, verbose=3):
+def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='angs', 
+                 plot=False, save=False, verbose=3):
     if ':' in toml:
         toml, dset = toml.split(':')
     else:
@@ -354,6 +358,8 @@ def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='ang
         eq_data['x'] = left_data['x']
         if verbose > 3:
             print('eq_data', eq_data)
+        if save:
+            save_txt(eq_data)
         #interp
         funcs, mins = interp_all_wrap(eq_data)
         #plot_eq(eq_data)
@@ -529,6 +535,23 @@ def interp_plot(ax, x, y, label):
     l, = ax.plot(x, y, label=label)
     return l
 
+def save_txt(eq_data):
+    name = eq_data['name']
+    with open(name+'.txt', 'w') as f:
+        f.write('x ')
+        for label in eq_data:
+            if label == 'x' or label == 'name' or label == 'tag':
+                continue
+            f.write(label+' ')
+        f.write('\n')
+        for i, x in enumerate(eq_data['x']):
+            f.write('%.3f '%x)
+            for label in eq_data:
+                if label == 'x' or label == 'name' or label == 'tag':
+                    continue
+                f.write('%.3f '%eq_data[label][i])
+            f.write('\n')
+
 if __name__ == '__main__':
     args = p.parse_args()
     shelf = args.input
@@ -537,7 +560,7 @@ if __name__ == '__main__':
     verbose = args.verbose
     if mode == 'curve':
         get_curve_eq(shelf, toml, mode, ilabelset=args.labelset, 
-                     unit=args.unit, xunit=args.xunit, plot=args.plot, verbose=verbose)
+                     unit=args.unit, xunit=args.xunit, plot=args.plot, save=args.save, verbose=verbose)
     elif mode == 'none':
         get_elabel(shelf)
     else:

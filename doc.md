@@ -34,3 +34,8 @@ For c2h4 (use submin)
 ```
 fit.py c2h4 -t c2h4.toml -m curve -v 4 -p --xunit deg
 ```
+
+## plot
+```
+plot.py txt1,txt2 -u kcal
+```
