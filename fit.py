@@ -515,7 +515,7 @@ def save_txt(eq_data, unit, ilabelset, scale=1.0):
             for label in eq_data:
                 if label == 'x' or label == 'name' or label == 'tag':
                     continue
-                f.write('%.3f '%eq_data[label][i]*scale)
+                f.write('%.3f '%(eq_data[label][i]*scale))
             f.write('\n')
 
 if __name__ == '__main__':
