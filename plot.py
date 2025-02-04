@@ -32,6 +32,8 @@ def get_unit(line):
         unit = 'eV'
     elif 'kcal' in line.lower():
         unit = 'kcal'
+    elif 'au' in line.lower():
+        unit = 'au'
     else:
         print("unit not recognized in res file, use kcal")
         unit = 'kcal'
@@ -108,18 +110,7 @@ def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
         ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
     return l
 
-
-def plot_all(x, funcs, minpoints, labels, loc='lower right', 
-             show=False, datafile='test', scale=1.0, unit='a.u.',
-             xunit='angs', ylim=(None,None), plotmin=True):
-    plt.rc('font', size=12)
-    plt_lines = []
-    #print(ys)
-    fig, ax = plt.subplots()
-    for i in range(len(funcs)):
-        if len(labels[i]) > 0:
-            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale, plotmin=plotmin)
-            plt_lines.append(l)
+def label_legend(ax, unit, xunit, plt_lines, labels, loc='lower right', xlim=(None,None), ylim=(None,None)):
     xunit_display = xunit
     if xunit == 'angs':
         xunit_display = '$\AA$'
@@ -134,12 +125,32 @@ def plot_all(x, funcs, minpoints, labels, loc='lower right',
     if unit == 'kcal':
         unit_display = 'kcal/mol'
     ax.set_ylabel('E / %s' % unit_display)
+    ax.set_xlim(xlim[0], xlim[1])
     ax.set_ylim(ylim[0], ylim[1])
     ax.legend(handles = plt_lines, labels = labels, loc=loc)
+
+def plot_all(x, funcs, minpoints, labels, loc='lower right', 
+             show=False, save=True, datafile='test', scale=1.0, unit='a.u.',
+             xunit='angs', ylim=(None,None), plotmin=True,
+             fig=None, ax=None, plt_lines=None):
+    plt.rc('font', size=12)
+    if plt_lines is None:
+        plt_lines = []
+    #print(ys)
+    if fig is None:
+        fig, ax = plt.subplots()
+    for i in range(len(funcs)):
+        if len(labels[i]) > 0:
+            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale, plotmin=plotmin)
+            plt_lines.append(l)
+    if save:
+        label_legend(ax, unit, xunit, plt_lines, labels, loc=loc, ylim=ylim)
     if show:
         plt.show()
-    print("save figure to %s.png" % datafile)
-    fig.savefig(datafile+'.png')
+    if save:
+        print("save figure to %s.png" % datafile)
+        fig.savefig(datafile+'.png')
+    return fig, plt_lines
     
 def scal_factor(dataunit, target_unit):
     if dataunit == target_unit:
@@ -148,22 +159,36 @@ def scal_factor(dataunit, target_unit):
         return 23.0605
     elif dataunit == 'kcal' and target_unit == 'eV':
         return 1.0/23.0605
+    elif dataunit == 'au' and target_unit == 'kcal':
+        return 627.5030
     else:
         raise NotImplementedError("unit not supported")
 
 if __name__ == "__main__":
     args = p.parse_args()
-    datafile = args.input
-    x, ys, series, dataunit = get_curves(datafile)
+    datafiles = args.input.split(',')
+    fig, ax = plt.subplots()
+    plt_lines = []
+    labels_all = []
+    for datafile in datafiles:
+        x, ys, series, dataunit = get_curves(datafile)
 #    if args.save:
 #        import db
 #        db.save(x, ys, series, unit=dataunit)
-    n_curves = ys.shape[1]
-    print(series)
-    scal = scal_factor(dataunit, args.unit)
-    print("perform unit convertion: %s -> %s, factor: %.6f" % (dataunit, args.unit, scal))
-    labels = ['', 'SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)']
+        n_curves = ys.shape[1]
+        print(series)
+        scal = scal_factor(dataunit, args.unit)
+        print("perform unit convertion: %s -> %s, factor: %.6f" % (dataunit, args.unit, scal))
+        #labels = ['', 'SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)']
+        labels = series
+        labels_all += labels
     
-    funcs, minpoints = interp_all(x, ys, labels=labels[-n_curves:], point=args.point, scal=scal)
-    if not args.noplot:
-        plot_all(x, funcs, minpoints, labels[-n_curves:], args.loc, args.show, datafile)
+        funcs, minpoints = interp_all(x, ys, labels=labels, point=args.point, scal=scal)
+        if not args.noplot:
+            fig, plt_lines = plot_all(x, funcs, minpoints, labels=labels, #loc=args.loc, 
+                     show=args.show, save=False, 
+                     #datafile=datafile,
+                     unit=args.unit, scale=scal, 
+                     fig=fig, ax=ax, plt_lines=plt_lines)
+    label_legend(ax, args.unit, 'angs', plt_lines, labels_all, loc=args.loc)
+    fig.savefig('test.png')
