@@ -23,6 +23,10 @@ def plot_parse():
                         help='')
     p.add_argument("-n","--noplot", action="store_true", required=False, help='')
 #    p.add_argument("-s","--save", action="store_true", required=False, help='')
+    p.add_argument("--xmin", type=float, dest='xmin', metavar='xmin', default=None)
+    p.add_argument("--xmax", type=float, dest='xmax', metavar='xmax', default=None)
+    p.add_argument("--ymin", type=float, dest='ymin', metavar='ymin', default=None)
+    p.add_argument("--ymax", type=float, dest='ymax', metavar='ymax', default=None)
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
     return p
 p = plot_parse()
@@ -198,5 +202,6 @@ if __name__ == "__main__":
                      #datafile=datafile,
                      unit=args.unit, scale=scal, 
                      fig=fig, ax=ax, plt_lines=plt_lines)
-    label_legend(ax, args.unit, 'angs', plt_lines, labels_all, loc=args.loc)
+    label_legend(ax, args.unit, 'angs', plt_lines, labels_all, loc=args.loc, 
+                 xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax))
     fig.savefig('test.png')
