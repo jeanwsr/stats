@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 #import sys
 import numpy as np
+from labelset import *
 
 import argparse
 
@@ -48,9 +49,16 @@ def get_curves(resfile):
         if line[:3] == 'sub':
             unit = get_unit(line)
             seriesline = f.readline()
-            series = seriesline.split()
+            if '#ilabel' in seriesline:
+                ilabelset = int(seriesline.split('#ilabelset')[1].strip())
+                series = labelset[ilabelset][1]
+            else:
+                series = seriesline.split()
+            #print(series)
             while(True):
                 line = f.readline()
+                #print(line)
+                if len(line) < 1: break
                 if line[0].isdigit():
                     #print(line)
                     raw = line.split()

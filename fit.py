@@ -6,6 +6,7 @@ import tomli
 import shelve
 import sys
 from statutil import suDataDB, to_unit
+from labelset import *
 import matplotlib.pyplot as plt
 from plot import interp_all, plot_all
 import numpy as np
@@ -49,44 +50,7 @@ LABELS_c = ['suhf', 'pbe', 'pbe0', 'pbe02',
             ('pbe', 'p3', 0.40, 0.0, 0.65)]
 LABELS = LABELS_c
 
-LABELS_p = ['suhf', 'pbe', 'pbe02', ('pbe', 'p3', 0.25, 0.0, 0.40)]
-LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c$)']
 
-LABELS_p1 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
-LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
-LABELS_p4 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 0.25, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
-LABELS_display4 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
-
-LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40), 
-            ('pbe', 't', 0.15, 0.0, -0.010),
-            ('pbe', 't', 0.30, 0.0, -0.025), 
-            # ('pbe', 't', 0.30, 0.0, -0.025),
-            # ('pbe', 't', 0.30, 0.0, -0.005),
-            # ('pbe', 't', 0.30, 0.10, -0.005),
-            # ('pbe', 't', 0.30, 0.15, -0.005),
-            # ('pbe', 't', 0.30, 0.20, -0.005),
-            # ('pbe', 't', 0.30, 0.0, -0.020),
-            # ('pbe', 't', 0.30, 0.05, -0.020),
-            # ('pbe', 't', 0.30, 0.10, -0.020),
-            # ('pbe', 't', 0.30, 0.15, -0.020),
-            ]
-# for h in np.arange(0.40, 0.40+0.01, 0.05):
-#     for t in np.arange(-0.005, -0.030-0.001, -0.005):
-#         for c in np.arange(-0.10, 0.25+0.01, 0.05):
-#             LABELS_t.append(('pbe', 't', h, c, t))
-LABELS_display_t = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)','SU-tPBE($\lambda=0.10,k$)', 'SU-tPBE($\lambda,c$)',
-                    'SU-tPBE($\lambda=0.15,\theta=-0.010$)', 
-                    'SU-tPBE($\lambda=0.30,\theta=-0.025$)']
-
-LABELS_t2 = ['suhf', 'pbe', ('pbe', 'p3', 0.25, 0.0, 0.40),
-             ('pbe', 't', 0.25, 0.0, -0.025),
-             ('pbe', 't', 0.30, 0.10, -0.010)
-             ]
-LABELS_display_t2 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,c$)', 'SU-tPBE($\lambda,t=-0.025$)', 'SU-tPBE($\lambda,t=-0.010$)']
-
-labelset = [[LABELS_p, LABELS_display], [LABELS_p1, LABELS_display1],
-            [LABELS_t, LABELS_display_t], [LABELS_t2, LABELS_display_t2],
-            [LABELS_p4, LABELS_display4]]
 
 class FitParam:
     def __init__(self):
@@ -359,7 +323,8 @@ def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='ang
         if verbose > 3:
             print('eq_data', eq_data)
         if save:
-            save_txt(eq_data, unit, ilabelset)
+            save_scale = 1.0 if submin else -1.0
+            save_txt(eq_data, unit, ilabelset, scale=save_scale)
         #interp
         funcs, mins = interp_all_wrap(eq_data)
         #plot_eq(eq_data)
@@ -535,7 +500,7 @@ def interp_plot(ax, x, y, label):
     l, = ax.plot(x, y, label=label)
     return l
 
-def save_txt(eq_data, unit, ilabelset):
+def save_txt(eq_data, unit, ilabelset, scale=1.0):
     name = eq_data['name']
     with open(name+'.txt', 'w') as f:
         f.write('sub '+unit+'\n')
@@ -550,7 +515,7 @@ def save_txt(eq_data, unit, ilabelset):
             for label in eq_data:
                 if label == 'x' or label == 'name' or label == 'tag':
                     continue
-                f.write('%.3f '%eq_data[label][i])
+                f.write('%.3f '%eq_data[label][i]*scale)
             f.write('\n')
 
 if __name__ == '__main__':
