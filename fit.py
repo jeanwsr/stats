@@ -54,7 +54,7 @@ LABELS_display = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda,k$)', 'SU-tPBE($\lambda,c
 
 LABELS_p1 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display1 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
-LABELS_p4 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 0.25, 2) ('pbe', 'p3', 0.25, 0.0, 0.40)]
+LABELS_p4 = ['suhf', 'pbe', ('pbe', 0.10, 2), ('pbe', 0.25, 2), ('pbe', 'p3', 0.25, 0.0, 0.40)]
 LABELS_display4 = ['SUHF', 'SU-tPBE', 'SU-tPBE($\lambda=0.10,k=2$)', 'SU-tPBE($\lambda=0.25,k=2$)', 'SU-tPBE($\lambda=0.25,c=0.40$)']
 
 LABELS_t = ['suhf', 'pbe', 'pbe02', ('pbe', 0.10, 2), ('pbe', 'p3', 0.25, 0.0, 0.40), 
@@ -359,7 +359,7 @@ def get_curve_eq(shelf, toml, mode='curve', ilabelset=0, unit='kcal', xunit='ang
         if verbose > 3:
             print('eq_data', eq_data)
         if save:
-            save_txt(eq_data)
+            save_txt(eq_data, unit, ilabelset)
         #interp
         funcs, mins = interp_all_wrap(eq_data)
         #plot_eq(eq_data)
@@ -535,15 +535,16 @@ def interp_plot(ax, x, y, label):
     l, = ax.plot(x, y, label=label)
     return l
 
-def save_txt(eq_data):
+def save_txt(eq_data, unit, ilabelset):
     name = eq_data['name']
     with open(name+'.txt', 'w') as f:
-        f.write('x ')
+        f.write('sub '+unit+'\n')
+        f.write(' ')
         for label in eq_data:
             if label == 'x' or label == 'name' or label == 'tag':
                 continue
-            f.write(label+' ')
-        f.write('\n')
+            f.write(str(label))
+        f.write(' #ilabelset %d\n'%ilabelset)
         for i, x in enumerate(eq_data['x']):
             f.write('%.3f '%x)
             for label in eq_data:
