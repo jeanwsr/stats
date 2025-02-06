@@ -28,6 +28,7 @@ def plot_parse():
     p.add_argument("--ymin", type=float, dest='ymin', metavar='ymin', default=None)
     p.add_argument("--ymax", type=float, dest='ymax', metavar='ymax', default=None)
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
+    p.add_argument("-o","--output", type=str, dest='output', metavar='output', default='test')
     return p
 p = plot_parse()
 
@@ -60,7 +61,7 @@ def get_curves(resfile):
                 series = seriesline.split()
             #print(series)
             while(True):
-                line = f.readline()
+                line = f.readline().strip()
                 #print(line)
                 if len(line) < 1: break
                 if line[0].isdigit():
@@ -112,7 +113,7 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
 
 def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
     #print(x, y)
-    samp = np.linspace(x[0], x[-1], 100)
+    samp = np.linspace(x[0], x[-1], 500)
     #func, point = interp(x, y)
     y_samp = func(samp)*scale
     #print(samp)
@@ -204,4 +205,4 @@ if __name__ == "__main__":
                      fig=fig, ax=ax, plt_lines=plt_lines)
     label_legend(ax, args.unit, 'angs', plt_lines, labels_all, loc=args.loc, 
                  xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax))
-    fig.savefig('test.png')
+    fig.savefig('%s.png'%args.output)
