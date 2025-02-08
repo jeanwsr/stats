@@ -17,7 +17,7 @@ stats_spc.py -t 'sio_si.out' -f PBE02 -m pddd -l none --save ./shelf
 ```
 
 ## fit
-calculate a few curves, and fit the minimumm
+calculate a few curves, and fit the minimum
 ```
 fit.py shelf -t spc.toml:dataset -m curve -u ev
 ```
