@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 #import sys
 import numpy as np
 from labelset import *
+from unit import scal_factor, get_unit
 
 import argparse
 
@@ -31,19 +32,6 @@ def plot_parse():
     p.add_argument("-o","--output", type=str, dest='output', metavar='output', default='test')
     return p
 p = plot_parse()
-
-def get_unit(line):
-    unit = None
-    if 'ev' in line.lower():
-        unit = 'eV'
-    elif 'kcal' in line.lower():
-        unit = 'kcal'
-    elif 'au' in line.lower():
-        unit = 'au'
-    else:
-        print("unit not recognized in res file, use kcal")
-        unit = 'kcal'
-    return unit
 
 def get_curves(resfile):
     f = open(resfile, 'r')
@@ -78,9 +66,18 @@ def get_curves(resfile):
         elif not line:
             break
     f.close()
-    
+
+    nseries = len(series) 
     x = np.array(x)
     ys = np.array(y)
+    ys = ys[:,:nseries]
+    if 'reffit' in series:
+        print('remove reffit')
+        idx = series.index('reffit')
+        ys = np.delete(ys, idx, axis=1)
+        series.remove('reffit')
+    print('series', series)
+    print('ys', ys)
     return x, ys, series, unit
 
 from interp import spline_findmin
@@ -113,7 +110,10 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
 
 def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
     #print(x, y)
-    samp = np.linspace(x[0], x[-1], 500)
+    npoint = 400
+    if x[-1] - x[0] > 10.0:
+        npoint = 1000
+    samp = np.linspace(x[0], x[-1], npoint)
     #func, point = interp(x, y)
     y_samp = func(samp)*scale
     #print(samp)
@@ -153,6 +153,8 @@ def plot_all(x, funcs, minpoints, labels, loc='lower right',
     if fig is None:
         fig, ax = plt.subplots()
     for i in range(len(funcs)):
+        #if 'reffit' in labels[i]:
+        #    continue
         if len(labels[i]) > 0:
             l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale, plotmin=plotmin)
             plt_lines.append(l)
@@ -165,18 +167,6 @@ def plot_all(x, funcs, minpoints, labels, loc='lower right',
         fig.savefig(datafile+'.png')
     return fig, plt_lines
     
-def scal_factor(dataunit, target_unit):
-    if dataunit == target_unit:
-        return 1.0
-    elif dataunit == 'eV' and target_unit == 'kcal':
-        return 23.0605
-    elif dataunit == 'kcal' and target_unit == 'eV':
-        return 1.0/23.0605
-    elif dataunit == 'au' and target_unit == 'kcal':
-        return 627.5030
-    else:
-        raise NotImplementedError("unit not supported")
-
 if __name__ == "__main__":
     args = p.parse_args()
     datafiles = args.input.split(',')
