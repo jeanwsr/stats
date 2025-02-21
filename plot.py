@@ -22,6 +22,7 @@ def plot_parse():
     p.add_argument("-p","--point", type=float, dest='point', metavar='point', default=None,
                         required=False, 
                         help='')
+    p.add_argument("-m","--mode", type=str, dest='mode', metavar='mode', default='normal',)
     p.add_argument("-n","--noplot", action="store_true", required=False, help='')
 #    p.add_argument("-s","--save", action="store_true", required=False, help='')
     p.add_argument("--xmin", type=float, dest='xmin', metavar='xmin', default=None)
@@ -108,6 +109,8 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
                 print('%20s point: %.6f  y(point): %.6f' %(labels[i], point, funcs[i](point)*scal))
     return funcs, minpoints
 
+FONTSIZE = 12
+
 def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
     #print(x, y)
     npoint = 400
@@ -123,7 +126,8 @@ def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
         ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
     return l
 
-def label_legend(ax, unit, xunit, plt_lines, labels, loc='lower right', xlim=(None,None), ylim=(None,None)):
+def label_legend(ax, unit, xunit, plt_lines, labels, 
+                 loc='lower right', ):
     xunit_display = xunit
     if xunit == 'angs':
         xunit_display = '$\AA$'
@@ -138,15 +142,20 @@ def label_legend(ax, unit, xunit, plt_lines, labels, loc='lower right', xlim=(No
     if unit == 'kcal':
         unit_display = 'kcal/mol'
     ax.set_ylabel('E / %s' % unit_display)
+    ax.legend(handles = plt_lines, labels = labels, loc=loc)
+
+def set_lim(ax, xlim=(None,None), ylim=(None,None)):
     ax.set_xlim(xlim[0], xlim[1])
     ax.set_ylim(ylim[0], ylim[1])
-    ax.legend(handles = plt_lines, labels = labels, loc=loc)
+
 
 def plot_all(x, funcs, minpoints, labels, loc='lower right', 
              show=False, save=True, datafile='test', scale=1.0, unit='a.u.',
-             xunit='angs', ylim=(None,None), plotmin=True,
+             xunit='angs', ylim=(None,None), plotmin=True, mode='normal',
              fig=None, ax=None, plt_lines=None):
-    plt.rc('font', size=12)
+    #if mode == 'child':
+    #    plt.rc('font', size=FONTSIZE*2)
+    #else:
     if plt_lines is None:
         plt_lines = []
     #print(ys)
@@ -170,7 +179,14 @@ def plot_all(x, funcs, minpoints, labels, loc='lower right',
 if __name__ == "__main__":
     args = p.parse_args()
     datafiles = args.input.split(',')
-    fig, ax = plt.subplots()
+    plt.rc('font', size=FONTSIZE)
+    fig, ax = plt.subplots(layout="constrained")
+    if args.mode == 'child':
+        fig.set_size_inches(6.4*0.4, 4.8*0.36)
+        fig.set_facecolor((1,1,1,0))
+        #ax.spines['bottom'].set_position(('axes',1))
+        #print(ax.spines)
+        ax.xaxis.set_ticks_position('top')
     plt_lines = []
     labels_all = []
     for datafile in datafiles:
@@ -191,8 +207,12 @@ if __name__ == "__main__":
             fig, plt_lines = plot_all(x, funcs, minpoints, labels=labels, #loc=args.loc, 
                      show=args.show, save=False, 
                      #datafile=datafile,
-                     unit=args.unit, scale=scal, 
+                     unit=args.unit, scale=scal, mode=args.mode,
                      fig=fig, ax=ax, plt_lines=plt_lines)
-    label_legend(ax, args.unit, 'angs', plt_lines, labels_all, loc=args.loc, 
-                 xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax))
+    set_lim(ax, xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax))
+    if args.mode != 'child':
+        label_legend(ax, args.unit, 'angs', plt_lines, labels_all,
+                     loc=args.loc, 
+                 #xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax)
+                 )
     fig.savefig('%s.png'%args.output)

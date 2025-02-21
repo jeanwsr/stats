@@ -4,10 +4,10 @@
 '''
 import tomli
 import shelve
-import sys
+#import sys
 from statutil import suDataDB, to_unit
 from labelset import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from plot import interp_all, plot_all
 import numpy as np
 import argparse
@@ -470,35 +470,35 @@ def get_mad(eq_deviation, labels):
         maxd[label] = mx
     return mad, maxd
 
-def plot_eq(eq_data, scale=-1.0):
-    plt.rc('font', size=12)
-    plt_lines = []
-    labels = []
-    #print(ys)
-    x = eq_data['x']
-    print('x', x)
-    fig, ax = plt.subplots()
-    for label in eq_data:
-        if label == 'x' or label == 'name' or label == 'tag':
-            continue
-        print('plot ', label)
-        l, = ax.plot(x, eq_data[label]*scale)
-        plt_lines.append(l)
-        labels.append(label)
-    ax.set_xlabel('R / $\AA$')
-    ax.set_ylabel('E / kcal/mol')
-    ymin = (eq_data['pbe']*scale).min() - 0.5
-    ax.set_ylim(ymin, 1.0)
-    ax.legend(handles = plt_lines, labels = labels)
-    #if show:
-    #    plt.show()
-    #print("save figure to %s.png" % datafile)
-    fig.savefig('%s.png'%eq_data['name'])
+# def plot_eq(eq_data, scale=-1.0):
+#     plt.rc('font', size=12)
+#     plt_lines = []
+#     labels = []
+#     #print(ys)
+#     x = eq_data['x']
+#     print('x', x)
+#     fig, ax = plt.subplots()
+#     for label in eq_data:
+#         if label == 'x' or label == 'name' or label == 'tag':
+#             continue
+#         print('plot ', label)
+#         l, = ax.plot(x, eq_data[label]*scale)
+#         plt_lines.append(l)
+#         labels.append(label)
+#     ax.set_xlabel('R / $\AA$')
+#     ax.set_ylabel('E / kcal/mol')
+#     ymin = (eq_data['pbe']*scale).min() - 0.5
+#     ax.set_ylim(ymin, 1.0)
+#     ax.legend(handles = plt_lines, labels = labels)
+#     #if show:
+#     #    plt.show()
+#     #print("save figure to %s.png" % datafile)
+#     fig.savefig('%s.png'%eq_data['name'])
 
 
-def interp_plot(ax, x, y, label):
-    l, = ax.plot(x, y, label=label)
-    return l
+# def interp_plot(ax, x, y, label):
+#     l, = ax.plot(x, y, label=label)
+#     return l
 
 def save_txt(eq_data, unit, ilabelset, scale=1.0):
     name = eq_data['name']
