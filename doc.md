@@ -38,6 +38,8 @@ fit.py c2h4 -t c2h4.toml -m curve -v 4 -p --xunit deg
 Save txt for plot
 ```
 fit.py shelf -t spc.toml:plot -m curve -l 4 --save
+fit.py c2h4 -t c2h4.toml -m curve -v 4 --xunit deg -l 4 --save
+
 ```
 
 ## plot
@@ -60,4 +62,8 @@ plot.py CO.txt,co_ref.txt --xmin 1.0 --xmax 3.5 --ymin -280 --ymax 10 -o co_big_
 plot.py CO.txt,co_ref.txt --xmin 1.0 --xmax 1.3 --ymin -280 --ymax -235 -o co_child_v2 -m child
 plot.py h2.txt,h2_ref.txt --xmin 0.5 --xmax 3.5 --ymax 6 --ymin -120 -o h2_big_v2
 plot.py h2.txt,h2_ref.txt --xmin 0.67 --xmax 0.85 --ymax -105 --ymin -113 -o h2_child_v2 -m child
+```
+
+```
+plot.py c2h4.txt,c2h4_rb3lyp.txt -o c2h4_new --loc 'upper left' -m nomin --xunit deg
 ```

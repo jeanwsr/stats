@@ -30,6 +30,7 @@ def plot_parse():
     p.add_argument("--ymin", type=float, dest='ymin', metavar='ymin', default=None)
     p.add_argument("--ymax", type=float, dest='ymax', metavar='ymax', default=None)
     p.add_argument("-u","--unit", type=str, dest='unit', metavar='unit', default='kcal')
+    p.add_argument("--xunit", type=str, dest='xunit', metavar='xunit', default='angs')
     p.add_argument("-o","--output", type=str, dest='output', metavar='output', default='test')
     return p
 p = plot_parse()
@@ -187,6 +188,10 @@ if __name__ == "__main__":
         #ax.spines['bottom'].set_position(('axes',1))
         #print(ax.spines)
         ax.xaxis.set_ticks_position('top')
+    if args.mode == 'nomin':
+        plotmin = False
+    else:
+        plotmin = True
     plt_lines = []
     labels_all = []
     for datafile in datafiles:
@@ -207,12 +212,12 @@ if __name__ == "__main__":
             fig, plt_lines = plot_all(x, funcs, minpoints, labels=labels, #loc=args.loc, 
                      show=args.show, save=False, 
                      #datafile=datafile,
-                     unit=args.unit, scale=scal, mode=args.mode,
+                     unit=args.unit, scale=scal, mode=args.mode, plotmin=plotmin,
                      fig=fig, ax=ax, plt_lines=plt_lines)
     set_lim(ax, xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax))
     if args.mode != 'child':
-        label_legend(ax, args.unit, 'angs', plt_lines, labels_all,
+        label_legend(ax, args.unit, args.xunit, plt_lines, labels_all,
                      loc=args.loc, 
                  #xlim=(args.xmin, args.xmax), ylim=(args.ymin, args.ymax)
                  )
-    fig.savefig('%s.png'%args.output)
+    fig.savefig('%s.png'%args.output, dpi=300)
