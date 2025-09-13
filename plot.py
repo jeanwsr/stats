@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    print('warn: matplotlib not found')
 #import sys
 import numpy as np
 from labelset import *
