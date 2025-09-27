@@ -42,8 +42,11 @@ def get_curves(resfile):
     f = open(resfile, 'r')
     x = []
     y = []
+    order = None
     while(True):
         line = f.readline()
+        if line[:5] == 'order':
+            order = [int(k) for k in line.split()[1:]]
         if line[:3] == 'sub':
             unit = get_unit(line)
             seriesline = f.readline()
@@ -81,9 +84,29 @@ def get_curves(resfile):
         idx = series.index('reffit')
         ys = np.delete(ys, idx, axis=1)
         series.remove('reffit')
+    if order is not None:
+        # print('reorder series', order)
+        ys = ys[:,order]
+        series = [series[i] for i in order]
     print('series', series)
+    series = filter_by_shortcut(series)
+    print('series updated', series)
     print('ys', ys)
     return x, ys, series, unit
+
+SHORTCUT = {
+    'o4a5': r"SU-tBLYP@SU-rsBLYP($\omega=0.4, \alpha=0.5$)",
+    'o4a4': r"SU-tBLYP@SU-rsBLYP($\omega=0.4, \alpha=0.4$)",
+    'o3a3': r"SU-tBLYP@SU-rsBLYP($\omega=0.3, \alpha=0.3$)",
+}
+def filter_by_shortcut(series):
+    newseries = []
+    for s in series:
+        if s in SHORTCUT:
+            newseries.append(SHORTCUT[s])
+        else:
+            newseries.append(s)
+    return newseries
 
 from interp import spline_findmin
 spline = spline_findmin
@@ -124,7 +147,11 @@ def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
     #func, point = interp(x, y)
     y_samp = func(samp)*scale
     #print(samp)
-    l, = ax.plot(samp, y_samp )
+    if 'rs' in label:
+        linestyle='--'
+    else:
+        linestyle='-'
+    l, = ax.plot(samp, y_samp, linestyle=linestyle)
     #print(minpoint)
     if plotmin:
         ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
@@ -146,7 +173,20 @@ def label_legend(ax, unit, xunit, plt_lines, labels,
     if unit == 'kcal':
         unit_display = 'kcal/mol'
     ax.set_ylabel('E / %s' % unit_display)
-    ax.legend(handles = plt_lines, labels = labels, loc=loc)
+    if loc == 'outside':
+        if len(labels) > 6:
+            ncols = 2
+        else:
+            ncols = 1
+        # Place legend outside to the right
+        #ax.legend(handles = plt_lines, labels = labels, bbox_to_anchor=(1.05, 1), loc='upper left')
+        # below
+        ax.legend(handles = plt_lines, labels = labels, 
+            bbox_to_anchor=(0.5, -0.15), loc='upper center', 
+            ncol=ncols)
+        plt.tight_layout()  # Adjust layout to make room
+    else:
+        ax.legend(handles = plt_lines, labels = labels, loc=loc)
 
 def set_lim(ax, xlim=(None,None), ylim=(None,None)):
     ax.set_xlim(xlim[0], xlim[1])
@@ -191,6 +231,8 @@ if __name__ == "__main__":
         #ax.spines['bottom'].set_position(('axes',1))
         #print(ax.spines)
         ax.xaxis.set_ticks_position('top')
+    elif args.loc == 'outside':
+        fig.set_size_inches(6.4, 7.2)
     if args.mode == 'nomin':
         plotmin = False
     else:
