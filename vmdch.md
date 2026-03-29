@@ -41,3 +41,6 @@ tricks
 fog
 display cueend 3.5
 ```
+
+# Misc
+`menu main on` for 1.94

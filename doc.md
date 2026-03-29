@@ -66,4 +66,5 @@ plot.py h2.txt,h2_ref.txt --xmin 0.67 --xmax 0.85 --ymax -105 --ymin -113 -o h2_
 
 ```
 plot.py c2h4.txt,c2h4_rb3lyp.txt -o c2h4_new --loc 'upper left' -m nomin --xunit deg
+~/stats/plot.py c2h4_full.txt,c2h4_rb3lyp_scatter.txt -o c2h4_full --loc 'outr' -m nomin --xunit deg
 ```

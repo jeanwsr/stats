@@ -110,9 +110,11 @@ def filter_by_shortcut(series):
 
 from interp import spline_findmin
 spline = spline_findmin
+INTERP_K = 3
+from matplotlib.cm import get_cmap
 
 def interp(x, y, label='', scal=1.0):
-    func, point = spline(x, y)
+    func, point = spline(x, y, k=INTERP_K)
     xmin, ymin = point
     print('%20s root: %.6f  y(root): %.6f' %(label, xmin[0], ymin[0]*scal))
     return func, point
@@ -136,23 +138,28 @@ def interp_all(x, ys, labels=[], point=None, scal=1.0):
                 print('%20s point: %.6f  y(point): %.6f' %(labels[i], point, funcs[i](point)*scal))
     return funcs, minpoints
 
-FONTSIZE = 12
+FONTSIZE = 11
 
-def plot(ax, x, func, minpoint, label='', scale=1.0, plotmin=True):
-    #print(x, y)
-    npoint = 400
-    if x[-1] - x[0] > 10.0:
-        npoint = 1000
-    samp = np.linspace(x[0], x[-1], npoint)
-    #func, point = interp(x, y)
-    y_samp = func(samp)*scale
-    #print(samp)
-    if 'rs' in label:
-        linestyle='--'
+def plot(ax, x, func, minpoint, label='', scatter=False, scale=1.0, plotmin=True):
+    #print(x, func)
+    if scatter:
+        #tab10_colors = plt.get_cmap('tab20b').colors
+        #plt.rcParams['axes.prop_cycle'] = plt.cycler(color=tab10_colors)
+        l = ax.scatter(x, func*scale, c='black')
     else:
-        linestyle='-'
-    l, = ax.plot(samp, y_samp, linestyle=linestyle)
-    #print(minpoint)
+        npoint = 400
+        if x[-1] - x[0] > 10.0:
+            npoint = 1000
+        samp = np.linspace(x[0], x[-1], npoint)
+        #func, point = interp(x, y)
+        y_samp = func(samp)*scale
+        #print(samp)
+        if 'rs' in label:
+            linestyle='--'
+        else:
+            linestyle='-'
+        l, = ax.plot(samp, y_samp, linestyle=linestyle)
+        #print(minpoint)
     if plotmin:
         ax.plot(minpoint[0], minpoint[1]*scale, 'ro', markersize=3)
     return l
@@ -173,7 +180,7 @@ def label_legend(ax, unit, xunit, plt_lines, labels,
     if unit == 'kcal':
         unit_display = 'kcal/mol'
     ax.set_ylabel('E / %s' % unit_display)
-    if loc == 'outside':
+    if loc == 'outside' or loc == 'outr':
         if len(labels) > 6:
             ncols = 2
         else:
@@ -181,9 +188,14 @@ def label_legend(ax, unit, xunit, plt_lines, labels,
         # Place legend outside to the right
         #ax.legend(handles = plt_lines, labels = labels, bbox_to_anchor=(1.05, 1), loc='upper left')
         # below
-        ax.legend(handles = plt_lines, labels = labels, 
-            bbox_to_anchor=(0.5, -0.15), loc='upper center', 
-            ncol=ncols)
+        if loc == 'outside':
+            ax.legend(handles = plt_lines, labels = labels, 
+                bbox_to_anchor=(0.5, -0.15), loc='upper center', 
+                ncol=ncols)
+        elif loc == 'outr':
+            ax.legend(handles = plt_lines, labels = labels, 
+                bbox_to_anchor=(1.05, 0.5), loc='center left',
+                ncol=ncols)
         plt.tight_layout()  # Adjust layout to make room
     else:
         ax.legend(handles = plt_lines, labels = labels, loc=loc)
@@ -194,7 +206,8 @@ def set_lim(ax, xlim=(None,None), ylim=(None,None)):
 
 
 def plot_all(x, funcs, minpoints, labels, loc='lower right', 
-             show=False, save=True, datafile='test', scale=1.0, unit='a.u.',
+             show=False, save=True, scatter=False,
+             datafile='test', scale=1.0, unit='a.u.',
              xunit='angs', ylim=(None,None), plotmin=True, mode='normal',
              fig=None, ax=None, plt_lines=None):
     #if mode == 'child':
@@ -209,7 +222,8 @@ def plot_all(x, funcs, minpoints, labels, loc='lower right',
         #if 'reffit' in labels[i]:
         #    continue
         if len(labels[i]) > 0:
-            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scale=scale, plotmin=plotmin)
+            l = plot(ax, x, funcs[i], minpoints[i], label=labels[i], scatter=scatter,
+                     scale=scale, plotmin=plotmin)
             plt_lines.append(l)
     if save:
         label_legend(ax, unit, xunit, plt_lines, labels, loc=loc, ylim=ylim)
@@ -233,6 +247,8 @@ if __name__ == "__main__":
         ax.xaxis.set_ticks_position('top')
     elif args.loc == 'outside':
         fig.set_size_inches(6.4, 7.2)
+    elif args.loc == 'outr':
+        fig.set_size_inches(7.2, 3.6)
     if args.mode == 'nomin':
         plotmin = False
     else:
@@ -251,11 +267,18 @@ if __name__ == "__main__":
         #labels = ['', 'SU-tPBE', 'SUHF', 'SU-tPBE0', 'SU-tPBE(0.25,2)']
         labels = series
         labels_all += labels
-    
-        funcs, minpoints = interp_all(x, ys, labels=labels, point=args.point, scal=scal)
+
+        scatter = 'scat' in datafile
+        if not scatter:
+            funcs, minpoints = interp_all(x, ys, labels=labels, point=args.point, scal=scal)
         if not args.noplot:
-            fig, plt_lines = plot_all(x, funcs, minpoints, labels=labels, #loc=args.loc, 
+            if scatter:
+                y_holder = ys.T
+            else:
+                y_holder = funcs
+            fig, plt_lines = plot_all(x, y_holder, minpoints, labels=labels, #loc=args.loc, 
                      show=args.show, save=False, 
+                     scatter=scatter,
                      #datafile=datafile,
                      unit=args.unit, scale=scal, mode=args.mode, plotmin=plotmin,
                      fig=fig, ax=ax, plt_lines=plt_lines)
