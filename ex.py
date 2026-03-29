@@ -29,6 +29,7 @@ def get_e( tmpp ):
         e_final = float(p_final)
     else:
         e_final = -1
+    if len(p_rssupd[0]) < 1: return e_final, None
     e_rssupd = list(map(float, p_rssupd))
     #print(e_rssupd)
     return e_final, np.array(e_rssupd)
@@ -52,6 +53,7 @@ for i1,o in enumerate(omega_list):
             e0_rs, e0_rssupd = get_e( f"{out_dir}/{spc}_{spin}0.out.rs_o{o}_sr{sr}" )
             e2_rs, e2_rssupd = get_e( f"{out_dir}/{spc}_{spin}2.out.rs_o{o}_sr{sr}" )
             #print(e0_rs, e2_rs)
+            if e0_rssupd is None: continue
             if e0_rs == -1 or e2_rs == -1:
                 est_rs = 0
             else:
