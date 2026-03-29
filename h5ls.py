@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import h5py
 import sys
 import re
@@ -6,35 +7,70 @@ def clean_key_name(key):
     """Remove __from_list__ suffix from key names"""
     return re.sub(r'__from_list__$', '', key)
 
-def print_hdf5_structure(name, obj, level=0):
-    """Recursively print compact HDF5 structure"""
-    indent = "  " * level
-    clean_name = clean_key_name(name)
-    
+def collect_hdf5_structure(name, obj):
+    """Recursively collect HDF5 structure info"""
     if isinstance(obj, h5py.Dataset):
-        is_list = '__from_list__' in name
-        if is_list and len(obj.shape) >= 2:
-            # List of arrays
-            member_shape = obj.shape[1:]
-            print(f"{indent}{clean_name}: list[{obj.shape[0]}] of {member_shape} {obj.dtype}")
-        elif is_list:
-            # List of scalars
-            print(f"{indent}{clean_name}: list[{obj.shape[0]}] of scalars {obj.dtype}")
+        is_in_list_group = '__from_list__' in name
+        is_list_group = name.endswith('__from_list__')
+        
+        if is_list_group and len(obj.shape) >= 1:
+            return ('list', clean_key_name(name), obj.shape, obj.dtype)
+        elif is_list_group:
+            return ('list', clean_key_name(name), 'scalars', obj.dtype)
+        elif is_in_list_group:
+            parent_clean = clean_key_name(name.rsplit('/', 1)[0])
+            return ('list_member', parent_clean, obj.shape, obj.dtype)
         else:
-            # Regular dataset
-            print(f"{indent}{clean_name}: {obj.shape} {obj.dtype}")
+            return ('dataset', clean_key_name(name), obj.shape, obj.dtype)
     elif isinstance(obj, h5py.Group):
         if name != '/':
-            print(f"{indent}{clean_name}/")
-            level += 1
+            return ('group', clean_key_name(name))
+    return None
+
+def print_hdf5_structure(items):
+    """Print compact HDF5 structure with grouped lists"""
+    list_groups = {}
+    regular_items = []
+    
+    for item in items:
+        if item is None:
+            continue
+        if item[0] == 'list':
+            typ, name, shape, dtype = item
+            key = (name, shape, dtype)
+            if key not in list_groups:
+                list_groups[key] = 0
+            list_groups[key] += 1
+        elif item[0] == 'list_member':
+            typ, name, shape, dtype = item
+            key = (name, shape, dtype)
+            if key not in list_groups:
+                list_groups[key] = 0
+            list_groups[key] += 1
+        else:
+            regular_items.append(item)
+    
+    for item in regular_items:
+        indent = ""
+        if item[0] == 'group':
+            print(f"{indent}{item[1]}/")
+        else:
+            print(f"{indent}{item[1]}: {item[2]} {item[3]}")
+    
+    for (name, shape, dtype), count in list_groups.items():
+        shape_str = shape if shape != 'scalars' else 'scalars'
+        print(f"{name}: list[{count}] of {shape_str} {dtype}")
 
 def list_hdf5_contents(filename):
     """List HDF5 contents in compact format"""
     try:
         with h5py.File(filename, 'r') as f:
+            items = []
+            f.visititems(lambda name, obj: items.append(collect_hdf5_structure(name, obj)))
+            
             print(f"\n{filename}")
             print("-" * 50)
-            f.visititems(lambda name, obj: print_hdf5_structure(name, obj))
+            print_hdf5_structure(items)
             print("-" * 50)
             
     except Exception as e:
